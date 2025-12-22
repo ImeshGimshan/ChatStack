@@ -1,8 +1,11 @@
 HELP.md
 target/
-.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+
+# Ensure Maven Wrapper is included for CI/CD
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
 
 ### STS ###
 .apt_generated

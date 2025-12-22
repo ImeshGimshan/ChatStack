@@ -25,3 +25,13 @@ services:
       - auth-db
 
   # Add other services here as needed
+
+  chat-service:
+    build: ./ChatService
+    container_name: chat-service-container
+    ports:
+      - "3001:3001"
+    environment:
+      - JWT_SECRET=this_is_the_secret_key
+    depends_on:
+      - auth-service
