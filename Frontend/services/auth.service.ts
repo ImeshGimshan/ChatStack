@@ -21,7 +21,7 @@ export const authService = {
             Cookies.set('token', data.token, { expires: 1, secure: false, sameSite: 'Lax' });
             const user = {
                 id: data.id || '0',
-                name: data.name || 'User',
+                username: data.username || 'User',
                 email: data.email || '',
                 token: data.token
             };
