@@ -1,39 +1,46 @@
-import { Logger, UseGuards } from "@nestjs/common";
-import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import { Server, Socket } from "socket.io";
+import { UseGuards } from "@nestjs/common";
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { WsAuthGuard } from "./auth/WsAuth.guard";
+import { Server, Socket } from "socket.io";
 
-@WebSocketGateway(3001, {
-    cors: {
-        origin: '*',
-    },
-})
+@WebSocketGateway(
+    {
+        cors: {
+            origin: 'http://localhost:3000',
+            credentials: true,
+        }
+    }
+)
 
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
-    private logger: Logger = new Logger('ChatGateway');
 
-    //new connection
-    handleConnection(clent: Socket, ...args:any[]){
-        this.logger.log(`Client connected: ${clent.id}`);
+    handleConnection(client: Socket, ...args: any[]): void {
+        // Optionally handle new connection logic here
+        console.log(`Client connected: ${client.id}`);
     }
 
-    //disconnect
-    handleDisconnect(client: Socket){
-        this.logger.log(`Client disconnected: ${client.id}`);
+    handleDisconnect(client: Socket): void {
+        // Optionally handle disconnect logic here
+        console.log(`Client disconnected: ${client.id}`);
     }
 
-    //message event
     @UseGuards(WsAuthGuard)
-    @SubscribeMessage('message')
-    handleMessage(client: Socket, payload: any) : void {
-        this.logger.log(`Message received from ${client.id}: ${payload.text}`);
+    @SubscribeMessage('send_message')
+    // connectedSocket gives full object of client including user info and messageBody gives the actual message payload
+    handleMessage(@ConnectedSocket() client: Socket, @MessageBody() payload: {text: string}) : void {
+        // extract who you are from verified token
+        const senderName = client['user']?.sub || 'Unknown';
 
-        this.server.emit('message', {
-            senderId: client.id,
-            message: payload.text,
+        // create a res opbject to send back to clients
+        const response = {
+            sender: senderName,
+            text: payload.text || 'empty message',
             timestamp: new Date().toISOString(),
-        })
+        }
+
+        // broadcast message to all connected clients
+        this.server.emit('receive_message', response);
     }
 }

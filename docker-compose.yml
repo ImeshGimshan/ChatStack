@@ -37,7 +37,7 @@ services:
       - auth-service
 
   frontend:
-    build: ./frontend
+    build: ./Frontend
     container_name: frontend-container
     ports:
       - "3000:3000"
@@ -45,7 +45,7 @@ services:
       - NEXT_PUBLIC_AUTH_API=http://localhost:8080
       - NEXT_PUBLIC_CHAT_API=http://localhost:3333
     volumes:
-      - ./frontend:/app
+      - ./Frontend:/app
       - /app/node_modules
     depends_on:
       - auth-service
