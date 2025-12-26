@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model users {
+  id       BigInt  @id @default(autoincrement())
+  email    String? @db.VarChar(255)
+  password String  @db.VarChar(255)
+  username String  @unique(map: "ukr43af9ap4edm43mmtq01oddj6") @db.VarChar(255)
+}
+
+model message {
+  id        Int      @id @default(autoincrement())
+  sender    String
+  text      String
+  timestamp DateTime @default(now())
+}
