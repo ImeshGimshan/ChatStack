@@ -4,6 +4,7 @@ import { Hash, MessageSquare, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSocket } from "@/hooks/useSocket";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,7 +12,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function ChatPageComponent() {
     const socket = useSocket();
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
+    const router = useRouter();
 
     const [messages, setMessages] = useState<any[]>([]);
     const [input, setInput] = useState<string>("");
@@ -52,6 +54,13 @@ export default function ChatPageComponent() {
             socket.off("exception", handleException);
         };
     }, [socket]);
+
+    // Redirect to landing page if user is not authenticated
+    useEffect(() => {
+        if (!loading && !user) {
+            router.replace('/login');
+        }
+    }, [loading, user, router]);
 
 
     const sendMessage = (e: React.FormEvent) => {

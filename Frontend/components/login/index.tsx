@@ -24,7 +24,7 @@ export default function LoginPageComponent() {
 
         try {
             await login(username, password);
-            router.push('/');
+            router.push('/chat');
         } catch (err) {
             setError('Invalid username or password');
             console.error("login error:", err);

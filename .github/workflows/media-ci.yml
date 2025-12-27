@@ -1,0 +1,26 @@
+name: Media Service CI
+
+on:
+  push:
+    paths:
+      - 'media-service/**'
+    branches: [main]
+
+jobs:
+  build-media:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './media-service/package-lock.json'
+      
+      - name: Build MediaService
+        working-directory: ./media-service
+        run: |
+          npm install
+          npm run build
