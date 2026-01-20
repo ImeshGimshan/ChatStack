@@ -69,3 +69,11 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./AuthService/target/site/jacoco
+          retention-days: 30

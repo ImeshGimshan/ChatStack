@@ -29,6 +29,16 @@ public class AuthService {
 
     @Transactional
     public User registerUser(User user){
+        // Check if username already exists
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new RuntimeException("User already exists");
+        }
+
+        // Check if email already exists
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
+
         // Encrypt the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         String otp = generateVerificationCode();
