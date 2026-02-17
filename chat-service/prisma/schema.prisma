@@ -8,11 +8,25 @@ datasource db {
   provider = "postgresql"
 }
 
+model userKey {
+  userId     BigInt   @id
+  publicKey  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("user_keys")
+}
+
 model message {
-  id        Int      @id @default(autoincrement())
-  sender    String
-  text      String
-  timestamp DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  senderId    BigInt
+  recipientId BigInt?  // null group msges
+  text        String
+  isEncrypted Boolean  @default(false)
+  timestamp   DateTime @default(now())
+
+  @@index([senderId])
+  @@index([recipientId])
 }
 
 model post {
@@ -24,13 +38,20 @@ model post {
   updatedAt DateTime @updatedAt
   authorId  BigInt
 
+  comments  comment[]
+
+  @@index([authorId])
   @@map("posts")
 }
 
 model comment {
   id        Int      @id @default(autoincrement())
   postId    Int
+  post      post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   content   String
   authorId  BigInt
   createdAt DateTime @default(now())
+
+  @@index([authorId])
+  @@index([postId])
 }

@@ -3,74 +3,149 @@ import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect,
 import { WsAuthGuard } from "../auth/WsAuth.guard";
 import { Server, Socket } from "socket.io";
 import { PrismaService } from "../prisma/prisma.service";
+import { ChatService } from "./chat.service";
 
 @WebSocketGateway(
     {
         cors: {
-            origin: 'http://localhost:3000',
-            credentials: true,
+            origin: '*',
+            nameSpace: '/chat',
         }
     }
 )
+@UseGuards(WsAuthGuard)
 
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
-    constructor(private prisma: PrismaService) { }
+    constructor(private chatService: ChatService) { }
 
-    handleConnection(client: Socket, ...args: any[]): void {
-        // Optionally handle new connection logic here
-        console.log(`Client connected: ${client.id}`);
-    }
+    async handleConnection(client: Socket) {
+        const userId = client.data.user?.sub;
+        const username = client.data.user?.username;
 
-    handleDisconnect(client: Socket): void {
-        // Optionally handle disconnect logic here
-        console.log(`Client disconnected: ${client.id}`);
-    }
+        if (userId) {
+            client.join(`user-${userId}`);
+            console.log(`Client connected: ${client.id} (User ID: ${userId}, Username: ${username})`);
 
-    @UseGuards(WsAuthGuard)
-    @SubscribeMessage('send_message')
-    // connectedSocket gives full object of client including user info and messageBody gives the actual message payload
-    async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() payload: { text: string }): Promise<void> {
-        // extract who you are from verified token
-        const senderName = client['user']?.sub || 'Unknown';
-
-        // create a res opbject to send back to clients
-        // const response = {
-        //     sender: senderName,
-        //     text: payload.text || 'empty message',
-        //     timestamp: new Date().toISOString(),
-        // }
-
-        try {
-            // save to the database 
-            const savedMessage = await this.prisma.message.create({
-                data: {
-                    sender: senderName,
-                    text: payload.text,
-                }
-            })
-
-            // broadcast message to all connected clients
-            this.server.emit('receive_message', savedMessage);
-        } catch (error) {
-            console.error('Error saving message to database:', error);
+            this.server.emit('user-online', { userId, username });
         }
     }
 
-    @SubscribeMessage('get_history')
-    async handleGetHistory() {
+    handleDisconnect(client: Socket) {
+        const userId = client.data.user?.sub;
+        const username = client.data.user?.username;
+
+        if (!userId) {
+            console.log(`Client disconnected: ${client.id} (Unknown user)`);
+
+            this.server.emit('user-offline', { userId, username });
+        }
+    }
+
+    @SubscribeMessage('send_message')
+    async handleGetPrivateMessage(
+        @MessageBody() data: {
+            recipientId: string;
+            encryptedMessage: string;
+            senderPublicKey: string;
+        },
+        @ConnectedSocket() client: Socket,
+    ) {
+        const senderId = client.data.user.sub;
+        const senderUsername = client.data.user.username;
+
         try {
-            const history = await this.prisma.message.findMany({
-                take: 50,
-                orderBy: {
-                    timestamp: 'asc',
-                },
+            const message = await this.chatService.savePrivateMessage({
+                senderId,
+                recipientId: data.recipientId,
+                text: data.encryptedMessage,
+                isEncrypted: true,
             });
-            return history;
+
+            this.server.to(`user-${data.recipientId}`).emit('private_message', {
+                messageId: message.id,
+                senderId,
+                senderUsername,
+                encryptedMessage: data.encryptedMessage,
+                senderPublicKey: data.senderPublicKey,
+                timestamp: message.timestamp,
+            });
+
+            return {
+                success: true,
+                messageId: message.id,
+                timestamp: message.timestamp,
+            };
         } catch (error) {
-            console.error('failed to fetch message history:', error);
-            return [];
+            console.error('Error saving private message:', error);
+            return {
+                success: false,
+                error: 'Failed to save message',
+            };
+        }
+    }
+
+    @SubscribeMessage('message')
+    async handleMessage(
+        @MessageBody() data: {text: string},
+        @ConnectedSocket() client: Socket,
+    ) {
+        const userId = client.data.user.sub;
+        const username = client.data.user.username || 'Anonymous';
+
+        try {
+            const message = await this.chatService.saveMessage(userId, data.text);
+
+            this.server.emit('messsage', {
+                id: message.id,
+                senderId: message.senderId.toString(),
+                senderUsername: username,
+                text: message.text,
+                timestamp: message.timestamp,
+            });
+
+            return {
+                success: true,
+                messageId: message.id
+            };
+        } catch (error) {
+            console.error("Error sending mesage", error);
+
+            return {
+                success: false,
+                error: "Failed to send message"
+            };
+        }
+    }
+
+    @SubscribeMessage('get-private-messages')
+    async handleGetPrivateMessages(
+        @MessageBody() data: { otherUserId: string },
+        @ConnectedSocket() client: Socket,
+    )
+    {
+        const userId = client.data.user.sub;
+
+        try {
+            const messages = await this.chatService.getPrivateMessages(userId, data.otherUserId);
+            return {
+                success: true,
+                messages: messages.map(msg => ({
+                    id: msg.id,
+                    senderId: msg.senderId.toString(),
+                    recipientId: msg.recipientId?.toString(),
+                    text: msg.text,
+                    isEncrypted: msg.isEncrypted,
+                    timestamp: msg.timestamp,
+                }))
+            };
+        } catch (error) {
+            console.error("Error fetching private messages", error);
+            return {
+                success: false,
+                error: 'Failed to fetch messages'
+            };
         }
     }
 }

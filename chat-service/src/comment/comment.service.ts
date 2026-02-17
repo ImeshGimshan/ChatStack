@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { AuthServiceClient } from "src/auth/auth-service.client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateCommentDto } from "./dto/createComment.dto";
@@ -63,7 +63,7 @@ export class CommentService {
         }
 
         if(comment.authorId !== BigInt(userId)){
-            throw new NotFoundException('You are not the author of this comment');
+            throw new ForbiddenException('You are not the author of this comment');
         }
 
         return this.prisma.comment.update({
@@ -84,7 +84,7 @@ export class CommentService {
         }
 
         if(comment.authorId !== BigInt(userId)){
-            throw new NotFoundException('You are not authorized to delete this comment');
+            throw new ForbiddenException('You are not authorized to delete this comment');
         }
 
         return this.prisma.comment.delete({
