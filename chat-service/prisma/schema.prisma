@@ -17,6 +17,52 @@ model userKey {
   @@map("user_keys")
 }
 
+model channel {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  isPrivate   Boolean  @default(false)
+  createdBy   BigInt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     ChannelMember[]
+  messages    ChannelMessage[]
+
+  @@index([createdBy])
+  @@map("channels")
+}
+
+model ChannelMember {
+  id        Int      @id @default(autoincrement())
+  channelId Int
+  userId    BigInt
+  role      String   @default("member")
+  joinedAt  DateTime @default(now())
+
+  channel   channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([userId])
+  @@index([channelId])
+  @@map("channel_members")
+}
+
+model ChannelMessage {
+  id          Int      @id @default(autoincrement())
+  channelId   Int
+  senderId    BigInt
+  text        String   // For private channels, this will be encrypted
+  isEncrypted Boolean  @default(false)
+  timestamp   DateTime @default(now())
+
+  channel     channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([channelId])
+  @@index([senderId])
+  @@map("channel_messages")
+}
+
 model message {
   id          Int      @id @default(autoincrement())
   senderId    BigInt
