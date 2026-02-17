@@ -5,6 +5,7 @@ import { PostModule } from './post/post.module';
 import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
 import { CommentModule } from './comment/comment.module';
+import { KeysModule } from './encryption/keys/keys.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CommentModule } from './comment/comment.module';
     ChatModule,
     PostModule,
     CommentModule,
+    KeysModule,
   ],
 })
 export class AppModule {}
