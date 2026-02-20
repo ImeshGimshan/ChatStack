@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommentModule } from './comment/comment.module';
 import { KeysModule } from './encryption/keys/keys.module';
 import { ChannelsModule } from './channel/Channels.module';
+import { PermissionModule } from './permission/permission.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ChannelsModule } from './channel/Channels.module';
     CommentModule,
     KeysModule,
     ChannelsModule,
+    PermissionModule
   ],
 })
 export class AppModule {}
