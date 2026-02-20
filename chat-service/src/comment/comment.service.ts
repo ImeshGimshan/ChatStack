@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/commo
 import { AuthServiceClient } from "src/auth/auth-service.client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateCommentDto } from "./dto/createComment.dto";
-import { create, post } from "axios";
 import { UpdateCommentDto } from "./dto/updateComment.dto";
 
 @Injectable()
