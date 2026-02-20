@@ -1,133 +1,314 @@
 generator client {
   provider = "prisma-client-js"
   moduleFormat = "cjs"
-  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model userKey {
-  userId     BigInt   @id
-  publicKey  String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+// ─────────────────────────────────────────────
+// USER (lightweight reference - actual data in auth-service)
+// ─────────────────────────────────────────────
+model User {
+  id        BigInt   @id
+
+  serverMembers        ServerMember[]
+  channelMembers       ChannelMember[]
+  channelMessages      ChannelMessage[]      @relation("ChannelMessageSender")
+  conversationMembers  ConversationMember[]
+  conversationMessages ConversationMessage[] @relation("ConversationMessageSender")
+  reactions            MessageReaction[]
+  readReceipts         ReadReceipt[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// ENCRYPTION KEY (per user)
+// ─────────────────────────────────────────────
+model UserKey {
+  userId    BigInt   @id
+  publicKey String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("user_keys")
 }
 
-model channel {
-  id          Int      @id @default(autoincrement())
+// ─────────────────────────────────────────────
+// SERVER (like a Discord Server/Guild)
+// ─────────────────────────────────────────────
+model Server {
+  id          BigInt   @id @default(autoincrement())
   name        String   @unique
   description String?
-  isPrivate   Boolean  @default(false)
+  iconUrl     String?
+  isPublic    Boolean  @default(true)
+  inviteCode  String?  @unique
   createdBy   BigInt
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  members     ChannelMember[]
-  messages    ChannelMessage[]
+  channels Channel[]
+  members  ServerMember[]
+  roles    Role[]
 
   @@index([createdBy])
+  @@map("servers")
+}
+
+// ─────────────────────────────────────────────
+// ROLE (server roles like Admin, Moderator, Member)
+// ─────────────────────────────────────────────
+model Role {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  color     String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  canManageServer    Boolean @default(false)
+  canManageChannels  Boolean @default(false)
+  canManageRoles     Boolean @default(false)
+  canKickMembers     Boolean @default(false)
+  canBanMembers      Boolean @default(false)
+  canSendMessages    Boolean @default(true)
+  canDeleteMessages  Boolean @default(false)
+  canMentionEveryone Boolean @default(false)
+
+  serverId BigInt
+  server   Server         @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  members  ServerMember[]
+
+  @@index([serverId])
+  @@map("roles")
+}
+
+// ─────────────────────────────────────────────
+// SERVER MEMBER (user in a server with a role)
+// ─────────────────────────────────────────────
+model ServerMember {
+  id       BigInt   @id @default(autoincrement())
+  joinedAt DateTime @default(now())
+  isBanned Boolean  @default(false)
+  nickname String?
+
+  serverId BigInt
+  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  userId BigInt
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  roleId BigInt?
+  role   Role?   @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  @@unique([serverId, userId])
+  @@index([userId])
+  @@index([serverId])
+  @@map("server_members")
+}
+
+// ─────────────────────────────────────────────
+// CHANNEL (text channels inside a server)
+// ─────────────────────────────────────────────
+model Channel {
+  id          BigInt   @id @default(autoincrement())
+  name        String
+  description String?
+  isPrivate   Boolean  @default(false)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  serverId BigInt
+  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  members  ChannelMember[]
+  messages ChannelMessage[]
+
+  @@unique([serverId, name])
+  @@index([serverId])
   @@map("channels")
 }
 
+// ─────────────────────────────────────────────
+// CHANNEL MEMBER (access control for private channels)
+// ─────────────────────────────────────────────
 model ChannelMember {
-  id        Int      @id @default(autoincrement())
-  channelId Int
-  userId    BigInt
-  role      String   @default("member")
-  joinedAt  DateTime @default(now())
+  id       BigInt   @id @default(autoincrement())
+  joinedAt DateTime @default(now())
 
-  channel   channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  channelId BigInt
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  userId BigInt
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([channelId, userId])
-  @@index([userId])
   @@index([channelId])
+  @@index([userId])
   @@map("channel_members")
 }
 
+// ─────────────────────────────────────────────
+// CHANNEL MESSAGE (messages inside text channels)
+// ─────────────────────────────────────────────
 model ChannelMessage {
-  id          Int      @id @default(autoincrement())
-  channelId   Int
-  senderId    BigInt
-  text        String   // For private channels, this will be encrypted
+  id          BigInt   @id @default(autoincrement())
+  content     String   @db.Text
   isEncrypted Boolean  @default(false)
-  timestamp   DateTime @default(now())
+  isEdited    Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  channel     channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  channelId BigInt
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  senderId BigInt
+  sender   User   @relation("ChannelMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  reactions MessageReaction[]
 
   @@index([channelId])
   @@index([senderId])
   @@map("channel_messages")
 }
 
-model conversation {
-  id           Int @id  @default(autoincrement())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+// ─────────────────────────────────────────────
+// CONVERSATION (direct messages / group DMs)
+// ─────────────────────────────────────────────
+model Conversation {
+  id        BigInt   @id @default(autoincrement())
+  name      String?
+  isGroup   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  participants ConversationParticipant[]
-  messages     message[]
+  members  ConversationMember[]
+  messages ConversationMessage[]
 
   @@map("conversations")
 }
 
-model ConversationParticipant {
-  id             Int  @id @default(autoincrement())
-  conversationId Int
-  userId         BigInt
-  joinedAt       DateTime @default(now())
+// ─────────────────────────────────────────────
+// CONVERSATION MEMBER (who is in the DM/group DM)
+// ─────────────────────────────────────────────
+model ConversationMember {
+  id         BigInt    @id @default(autoincrement())
+  joinedAt   DateTime  @default(now())
+  lastReadAt DateTime?
 
-  conversation   conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId BigInt
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  userId BigInt
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([conversationId, userId])
-  @@index([userId])
   @@index([conversationId])
-  @@map("conversation_participants")
+  @@index([userId])
+  @@map("conversation_members")
 }
 
-model message {
-  id             Int      @id @default(autoincrement())
-  conversationId Int
-  senderId       BigInt
-  text           String
-  isEncrypted    Boolean  @default(false)
-  isRead         Boolean  @default(false)
-  timestamp      DateTime @default(now())
+// ─────────────────────────────────────────────
+// CONVERSATION MESSAGE (DM messages)
+// ─────────────────────────────────────────────
+model ConversationMessage {
+  id          BigInt   @id @default(autoincrement())
+  content     String   @db.Text
+  isEncrypted Boolean  @default(false)
+  isEdited    Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  conversation   conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId BigInt
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId BigInt
+  sender   User   @relation("ConversationMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  reactions    MessageReaction[]
+  readReceipts ReadReceipt[]
 
   @@index([conversationId])
   @@index([senderId])
-  @@index([isRead])
-  @@map("messages")
+  @@map("conversation_messages")
 }
 
-model post {
+// ─────────────────────────────────────────────
+// MESSAGE REACTION (emoji reactions on any message)
+// ─────────────────────────────────────────────
+model MessageReaction {
+  id        BigInt   @id @default(autoincrement())
+  emoji     String
+  createdAt DateTime @default(now())
+
+  userId BigInt
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  channelMessageId      BigInt?
+  channelMessage        ChannelMessage?      @relation(fields: [channelMessageId], references: [id], onDelete: Cascade)
+
+  conversationMessageId BigInt?
+  conversationMessage   ConversationMessage? @relation(fields: [conversationMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channelMessageId, emoji])
+  @@unique([userId, conversationMessageId, emoji])
+  @@index([channelMessageId])
+  @@index([conversationMessageId])
+  @@map("message_reactions")
+}
+
+// ─────────────────────────────────────────────
+// READ RECEIPT (who read which DM messages)
+// ─────────────────────────────────────────────
+model ReadReceipt {
+  id     BigInt   @id @default(autoincrement())
+  readAt DateTime @default(now())
+
+  userId BigInt
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  messageId BigInt
+  message   ConversationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId])
+  @@index([userId])
+  @@index([messageId])
+  @@map("read_receipts")
+}
+
+// ─────────────────────────────────────────────
+// POST & COMMENT (social feed)
+// ─────────────────────────────────────────────
+model Post {
   id        Int      @id @default(autoincrement())
   title     String?
   content   String
   imageUrl  String?
+  authorId  BigInt
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  authorId  BigInt
 
-  comments  comment[]
+  comments Comment[]
 
   @@index([authorId])
   @@map("posts")
 }
 
-model comment {
+model Comment {
   id        Int      @id @default(autoincrement())
-  postId    Int
-  post      post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   content   String
   authorId  BigInt
   createdAt DateTime @default(now())
 
+  postId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   @@index([authorId])
   @@index([postId])
+  @@map("comments")
 }
