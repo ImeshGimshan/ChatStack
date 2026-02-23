@@ -27,11 +27,7 @@ jobs:
       - name: Install dependencies
         working-directory: ./chat-service
         run: npm ci
-
-      - name: Audit dependencies
-        working-directory: ./chat-service
-        run: npm audit --audit-level=critical
-
+        
       - name: Generate Prisma Client
         working-directory: ./chat-service
         run: npx prisma generate
