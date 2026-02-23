@@ -5,27 +5,70 @@ on:
     paths:
       - 'chat-service/**'
     branches: [main]
+  pull_request:
+    paths:
+      - 'chat-service/**'
 
 jobs:
   build-chat:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: './chat-service/package-lock.json'
-      
+
+      - name: Install dependencies
+        working-directory: ./chat-service
+        run: npm ci
+
+      - name: Audit dependencies
+        working-directory: ./chat-service
+        run: npm audit --audit-level=high
+
+      - name: Generate Prisma Client
+        working-directory: ./chat-service
+        run: npx prisma generate
+
+      - name: Lint code
+        working-directory: ./chat-service
+        run: npm run lint
+
+      - name: Check formatting
+        working-directory: ./chat-service
+        run: npm run format:check
+
+      - name: Type check
+        working-directory: ./chat-service
+        run: npx tsc --noEmit
+
+      - name: Run unit tests
+        working-directory: ./chat-service
+        run: npm run test
+
+      - name: Run e2e tests
+        working-directory: ./chat-service
+        run: npm run test:e2e
+
       - name: Build ChatService
         working-directory: ./chat-service
-        run: |
-          npm install
-          npx prisma generate
-          npm run build
+        run: npm run build
         env:
-          # If your NestJS tests need the JWT secret to run, add it here
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build Docker image
+        working-directory: ./chat-service
+        run: docker build -t chat-service .
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-service-dist
+          path: ./chat-service/dist
