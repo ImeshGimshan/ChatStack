@@ -61,6 +61,26 @@ services:
     networks:
       - app-network
 
+  test-db:
+    image: postgres:16-alpine
+    container_name: test-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${TEST_DB_USER}
+      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD}
+      POSTGRES_DB: ${TEST_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEST_DB_USER} -d ${TEST_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5435:5432"
+    volumes:
+      - test-postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
   mongodb:
     image: mongo:7
     container_name: mongo-container
@@ -94,6 +114,18 @@ services:
       retries: 5
     networks:
       - app-network
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: chat-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    volumes:
+      - redis-data:/data
 
   auth-service:
     build: ./AuthService
@@ -139,9 +171,12 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - DATABASE_URL=postgresql://${CHAT_DB_USER}:${CHAT_DB_PASSWORD}@chat-db:5432/${CHAT_DB_NAME}
       - AUTH_SERVICE_URL=http://auth-service:8080
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       - chat-db
       - auth-service
+      - redis
     networks:
       - app-network
 
@@ -223,5 +258,7 @@ volumes:
   auth-postgres-data:
   chat-postgres-data:
   social-postgres-data:
-  mongodb-data:     
+  test-postgres-data:
+  mongodb-data:
+  redis-data:   
   rabbitmq-data: 
