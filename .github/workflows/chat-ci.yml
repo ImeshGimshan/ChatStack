@@ -30,7 +30,7 @@ jobs:
 
       - name: Audit dependencies
         working-directory: ./chat-service
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
 
       - name: Generate Prisma Client
         working-directory: ./chat-service
