@@ -102,4 +102,40 @@ export class ChannelsController {
       BigInt(requesterId),
     );
   }
+
+  @Post(':channelId/messages/:messageId/reactions')
+  async addReaction(
+    @Param('channelId', ParseIntPipe) channelId: number,
+    @Param('messageId', ParseIntPipe) messageId: number,
+    @Body('userId') userId: string,
+    @Body('emoji') emoji: string,
+  ) {
+    return this.channelsService.addReaction(
+      BigInt(messageId),
+      BigInt(userId),
+      emoji,
+    );
+  }
+
+  @Delete(':channelId/messages/:messageId/reactions')
+  async removeReaction(
+    @Param('channelId', ParseIntPipe) channelId: number,
+    @Param('messageId', ParseIntPipe) messageId: number,
+    @Body('userId') userId: string,
+    @Body('emoji') emoji: string,
+  ) {
+    return this.channelsService.removeReaction(
+      BigInt(messageId),
+      BigInt(userId),
+      emoji,
+    );
+  }
+
+  @Get(':channelId/messages/:messageId/reactions')
+  async listReactions(
+    @Param('channelId', ParseIntPipe) channelId: number,
+    @Param('messageId', ParseIntPipe) messageId: number,
+  ) {
+    return this.channelsService.listReactions(BigInt(messageId));
+  }
 }

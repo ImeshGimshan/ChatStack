@@ -105,4 +105,35 @@ export class ChannelsService {
       },
     });
   }
+
+  async addReaction(messageId: bigint, userId: bigint, emoji: string){
+    return this.prisma.messageReaction.create({
+      data: {
+        channelMessageId: messageId,
+        userId,
+        emoji,
+      },
+    });
+  }
+
+  async removeReaction(messageId: bigint, userId: bigint, emoji: string) {
+    return this.prisma.messageReaction.delete({
+      where: {
+        userId_channelMessageId_emoji: {
+          channelMessageId: messageId,
+          userId,
+          emoji,
+        },
+      },
+    });
+  }
+
+  async listReactions(messageId: bigint) {
+    return this.prisma.messageReaction.findMany({
+      where: { channelMessageId: messageId },
+      include: {
+        user: true,
+      },
+    });
+  }
 }
