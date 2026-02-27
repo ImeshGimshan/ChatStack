@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         working-directory: ./chat-service
         run: npm ci
-
+        
       - name: Generate Prisma Client
         working-directory: ./chat-service
         run: npx prisma generate
