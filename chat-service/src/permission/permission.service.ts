@@ -183,14 +183,17 @@ export class PermissionService {
 
   // conversation (DM) Permissions
 
-  async isConversationMember(userId: bigint, conversationId: bigint): Promise<boolean> {
+  async isConversationMember(
+    userId: bigint,
+    conversationId: bigint,
+  ): Promise<boolean> {
     const member = await this.prisma.conversationMember.findUnique({
-        where: {
-            conversationId_userId: {
-                conversationId,
-                userId,
-            },
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
         },
+      },
     });
     return !!member;
   }
@@ -201,14 +204,14 @@ export class PermissionService {
 
   async canDeleteDM(userId: bigint, messageId: bigint): Promise<boolean> {
     const message = await this.prisma.conversationMessage.findUnique({
-        where: { id: messageId },
-        select: {
-            senderId: true,
-        },
+      where: { id: messageId },
+      select: {
+        senderId: true,
+      },
     });
 
     if (!message) {
-        return false;
+      return false;
     }
 
     return message.senderId === userId;
