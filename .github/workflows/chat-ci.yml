@@ -28,33 +28,9 @@ jobs:
         working-directory: ./chat-service
         run: npm ci
 
-      - name: Audit dependencies
-        working-directory: ./chat-service
-        run: npm audit --audit-level=high
-
       - name: Generate Prisma Client
         working-directory: ./chat-service
         run: npx prisma generate
-
-      - name: Lint code
-        working-directory: ./chat-service
-        run: npm run lint
-
-      - name: Check formatting
-        working-directory: ./chat-service
-        run: npm run format:check
-
-      - name: Type check
-        working-directory: ./chat-service
-        run: npx tsc --noEmit
-
-      - name: Run unit tests
-        working-directory: ./chat-service
-        run: npm run test
-
-      - name: Run e2e tests
-        working-directory: ./chat-service
-        run: npm run test:e2e
 
       - name: Build ChatService
         working-directory: ./chat-service

@@ -5,14 +5,14 @@ import { JwtStrategy } from './jwt.strategy';
 import { AuthServiceClient } from './auth-service.client';
 
 @Module({
-    imports: [
-        PassportModule,
-        JwtModule.register({
-            secret: process.env.JWT_SECRET || 'defaultSecretKey',
-            signOptions: { expiresIn: '1h' },
-        }),
-    ],
-    providers: [JwtStrategy, AuthServiceClient],
-    exports: [JwtModule, AuthServiceClient],
+  imports: [
+    PassportModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'defaultSecretKey',
+      signOptions: { expiresIn: '1h' },
+    }),
+  ],
+  providers: [JwtStrategy, AuthServiceClient],
+  exports: [JwtModule, AuthServiceClient],
 })
-export class AuthModule { }
+export class AuthModule {}

@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/Jwt.Auth.guard';
 import { ChannelsService } from './Channels.Service';
 import { ApiTags } from '@nestjs/swagger';
@@ -20,7 +31,11 @@ export class ChannelsController {
     @Body('name') name: string,
     @Body('description') description: string,
   ) {
-    return this.channelsService.createChannel(BigInt(serverId), name, description);
+    return this.channelsService.createChannel(
+      BigInt(serverId),
+      name,
+      description,
+    );
   }
 
   @Get(':id')
@@ -74,7 +89,10 @@ export class ChannelsController {
     @Param('id', ParseIntPipe) id: number,
     @Query('limit') limit?: string,
   ) {
-    return this.channelsService.getMessages(BigInt(id), limit ? parseInt(limit) : 50);
+    return this.channelsService.getMessages(
+      BigInt(id),
+      limit ? parseInt(limit) : 50,
+    );
   }
 
   @Patch(':channelId/messages/:messageId')

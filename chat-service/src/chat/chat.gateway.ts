@@ -90,7 +90,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('typing')
   async handleTyping(
     client: Socket,
-    payload: { conversationId: String; isTyping: boolean },
+    payload: { conversationId: string; isTyping: boolean },
   ) {
     const userId = client.data.user.sub;
     const key = `typing:${payload.conversationId}: ${userId}`;

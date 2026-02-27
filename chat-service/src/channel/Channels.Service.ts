@@ -32,7 +32,7 @@ export class ChannelsService {
 
   async deleteChannel(channelId: bigint) {
     return this.prisma.channel.delete({
-      where: { id: channelId }, 
+      where: { id: channelId },
     });
   }
 
@@ -65,7 +65,12 @@ export class ChannelsService {
     });
   }
 
-  async sendMessage(channelId: bigint, senderId: bigint, content: string, isEncrypted = false) {
+  async sendMessage(
+    channelId: bigint,
+    senderId: bigint,
+    content: string,
+    isEncrypted = false,
+  ) {
     return this.prisma.channelMessage.create({
       data: {
         channelId,
@@ -106,7 +111,7 @@ export class ChannelsService {
     });
   }
 
-  async addReaction(messageId: bigint, userId: bigint, emoji: string){
+  async addReaction(messageId: bigint, userId: bigint, emoji: string) {
     return this.prisma.messageReaction.create({
       data: {
         channelMessageId: messageId,
