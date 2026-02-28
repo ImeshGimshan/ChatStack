@@ -15,12 +15,14 @@ import { CommentService } from './comment.service';
 import { JwtAuthGuard } from 'src/auth/Jwt.Auth.guard';
 import { CreateCommentDto } from './dto/createComment.dto';
 import { UpdateCommentDto } from './dto/updateComment.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('comments')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
   @Post()
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async createComment(
     @Body() createCommentDto: CreateCommentDto,
@@ -40,6 +42,7 @@ export class CommentController {
   }
 
   @Patch(':id')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async updateComment(
     @Param('id', ParseIntPipe) id: number,
@@ -54,6 +57,7 @@ export class CommentController {
   }
 
   @Delete(':id')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async deleteComment(@Param('id', ParseIntPipe) id: number, @Request() req) {
     return this.commentService.deleteComment(id, req.user.userId);

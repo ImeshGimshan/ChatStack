@@ -8,7 +8,9 @@ import { CommentModule } from './comment/comment.module';
 import { KeysModule } from './encryption/keys/keys.module';
 import { ChannelsModule } from './channel/Channels.module';
 import { PermissionModule } from './permission/permission.module';
-import { ServerModule } from './server/server.module'; 
+import { ServerModule } from './server/server.module';
+import { ConversationService } from './conversation/conversation.service';
+import { ConversationModule } from './conversation/conversation.module';
 
 @Module({
   imports: [
@@ -22,7 +24,9 @@ import { ServerModule } from './server/server.module';
     KeysModule,
     ChannelsModule,
     PermissionModule,
-    ServerModule
+    ServerModule,
+    ConversationModule,
   ],
+  providers: [ConversationService],
 })
 export class AppModule {}

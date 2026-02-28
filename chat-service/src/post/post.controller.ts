@@ -14,12 +14,14 @@ import { PostService } from './post.service';
 import { CreatePostDto } from './dto/createPost.dto';
 import { UpdatePostDto } from './dto/updatePost.dto';
 import { JwtAuthGuard } from 'src/auth/Jwt.Auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('posts')
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post()
   async createPost(@Request() req: any, @Body() createPostDto: CreatePostDto) {
     const userId = req.user.userId;
@@ -32,6 +34,7 @@ export class PostController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Patch(':id')
   async updatePost(
     @Param('id', ParseIntPipe) postId: number,
@@ -43,6 +46,7 @@ export class PostController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Delete(':id')
   async deletePost(
     @Param('id', ParseIntPipe) postId: number,
