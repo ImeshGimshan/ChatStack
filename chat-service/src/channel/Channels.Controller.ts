@@ -12,9 +12,10 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/Jwt.Auth.guard';
 import { ChannelsService } from './Channels.Service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Channels')
+@ApiBearerAuth()
 @Controller('channels')
 @UseGuards(JwtAuthGuard)
 export class ChannelsController {

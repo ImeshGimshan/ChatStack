@@ -12,8 +12,10 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/Jwt.Auth.guard';
 import { KeyService } from './key.service';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('keys')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class KeysController {
   constructor(private keysService: KeyService) {}
