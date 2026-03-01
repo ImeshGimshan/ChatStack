@@ -8,11 +8,18 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/Jwt.Auth.guard';
 import { ChannelsService } from './Channels.Service';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { CreateChannelDto } from './dto/CreateChannelDto';
+import { UpdateChannelDto } from './dto/UpdateChannelDto';
+import { AddMemberDto } from './dto/AddMemberDto';
+import { SendMessageDto } from './dto/SendMessageDto';
+import { EditMessageDto } from './dto/EditMessageDto';
+import { AddReactionDto } from './dto/AddReactionDto';
 
 @ApiTags('Channels')
 @ApiBearerAuth()
@@ -27,15 +34,18 @@ export class ChannelsController {
   }
 
   @Post()
+  @ApiBody({ type: CreateChannelDto })
   async createChannel(
-    @Body('serverId') serverId: string,
-    @Body('name') name: string,
-    @Body('description') description: string,
+    @Body() body: CreateChannelDto,
+    @Query('serverId') serverId: string,
   ) {
+    if (!serverId) {
+      throw new Error('serverId is required');
+    }
     return this.channelsService.createChannel(
       BigInt(serverId),
-      name,
-      description,
+      body.name,
+      body.description || '',
     );
   }
 
@@ -50,11 +60,12 @@ export class ChannelsController {
   }
 
   @Post(':id/members')
+  @ApiBody({ type: AddMemberDto })
   async addMember(
     @Param('id', ParseIntPipe) id: number,
-    @Body('userId') userId: string,
+    @Body() body: AddMemberDto,
   ) {
-    return this.channelsService.addMember(BigInt(id), BigInt(userId));
+    return this.channelsService.addMember(BigInt(id), BigInt(body.userId));
   }
 
   @Delete(':id/members/:userId')
@@ -71,17 +82,21 @@ export class ChannelsController {
   }
 
   @Post(':id/messages')
+  @ApiBody({ type: SendMessageDto })
   async sendMessage(
     @Param('id', ParseIntPipe) id: number,
-    @Body('senderId') senderId: string,
-    @Body('content') content: string,
-    @Body('isEncrypted') isEncrypted?: boolean,
+    @Body() body: SendMessageDto,
+    @Req() req: any,
   ) {
+    const senderId = req.user?.userId;
+    if (!senderId) {
+      throw new Error('Authenticated userId is required');
+    }
     return this.channelsService.sendMessage(
       BigInt(id),
       BigInt(senderId),
-      content,
-      isEncrypted ?? false,
+      body.content,
+      body.isEncrypted ?? false,
     );
   }
 
@@ -97,16 +112,21 @@ export class ChannelsController {
   }
 
   @Patch(':channelId/messages/:messageId')
+  @ApiBody({ type: EditMessageDto })
   async editMessage(
     @Param('channelId', ParseIntPipe) channelId: number,
     @Param('messageId', ParseIntPipe) messageId: number,
-    @Body('editorId') editorId: string,
-    @Body('newContent') newContent: string,
+    @Body() body: EditMessageDto,
+    @Req() req: any,
   ) {
+    const editorId = req.user?.userId;
+    if (!editorId) {
+      throw new Error('Authenticated userId is required');
+    }
     return this.channelsService.editMessage(
       BigInt(messageId),
       BigInt(editorId),
-      newContent,
+      body.newContent,
     );
   }
 
@@ -114,8 +134,12 @@ export class ChannelsController {
   async deleteMessage(
     @Param('channelId', ParseIntPipe) channelId: number,
     @Param('messageId', ParseIntPipe) messageId: number,
-    @Body('requesterId') requesterId: string,
+    @Req() req: any,
   ) {
+    const requesterId = req.user?.userId;
+    if (!requesterId) {
+      throw new Error('Authenticated userId is required');
+    }
     return this.channelsService.deleteMessage(
       BigInt(messageId),
       BigInt(requesterId),
@@ -123,30 +147,40 @@ export class ChannelsController {
   }
 
   @Post(':channelId/messages/:messageId/reactions')
+  @ApiBody({ type: AddReactionDto })
   async addReaction(
     @Param('channelId', ParseIntPipe) channelId: number,
     @Param('messageId', ParseIntPipe) messageId: number,
-    @Body('userId') userId: string,
-    @Body('emoji') emoji: string,
+    @Body() body: AddReactionDto,
+    @Req() req: any,
   ) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new Error('Authenticated userId is required');
+    }
     return this.channelsService.addReaction(
       BigInt(messageId),
       BigInt(userId),
-      emoji,
+      body.emoji,
     );
   }
 
   @Delete(':channelId/messages/:messageId/reactions')
+  @ApiBody({ type: AddReactionDto })
   async removeReaction(
     @Param('channelId', ParseIntPipe) channelId: number,
     @Param('messageId', ParseIntPipe) messageId: number,
-    @Body('userId') userId: string,
-    @Body('emoji') emoji: string,
+    @Body() body: AddReactionDto,
+    @Req() req: any,
   ) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new Error('Authenticated userId is required');
+    }
     return this.channelsService.removeReaction(
       BigInt(messageId),
       BigInt(userId),
-      emoji,
+      body.emoji,
     );
   }
 
