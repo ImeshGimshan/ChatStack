@@ -4,6 +4,8 @@ import { Module } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { AuthModule } from 'src/auth/auth.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { ChannelsModule } from 'src/channel/Channels.module';
+import { ConversationModule } from 'src/conversation/conversation.module';
 
 @Module({
   imports: [
@@ -13,7 +15,10 @@ import { RedisModule } from '@nestjs-modules/ioredis';
     }),
     PrismaModule,
     AuthModule,
+    ChannelsModule,
+    ConversationModule,
   ],
   providers: [ChatGateway, ChatService],
+  exports: [ChatService],
 })
 export class ChatModule {}

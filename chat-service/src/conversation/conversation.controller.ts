@@ -1,81 +1,141 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  InternalServerErrorException,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/Jwt.Auth.guard';
 import { ConversationService } from './conversation.service';
 import e from 'express';
+import { CreateConversationDto } from './dto/CreateConversationDto';
+import { SendMessageDto } from './dto/SendMessageDto';
+import { EditMessageDto } from './dto/EditMessageDto';
 
 @ApiTags('Conversation')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('conversation')
 export class ConversationController {
-    constructor(private conversationService: ConversationService) {}
+  constructor(private conversationService: ConversationService) {}
 
-    @Post()
-    async createConversation(
-        @Body('userIds') userIds: string[],
-        @Body('name') name?: string,
-    ) {
-        return this.conversationService.createConversation(
-            userIds.map(BigInt),
-            name
-        );
+  @Post()
+  @ApiOperation({ summary: 'Create a new conversation DM or group' })
+  async createConversation(
+    @Body() dto: CreateConversationDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new BadRequestException('Authenticated userId is required');
     }
-
-    @Get()
-    async getConversationsForUser(@Query('userId') userId: string) {
-        return this.conversationService.getConversationsForUser(BigInt(userId));
+    try {
+      const userIds = [BigInt(userId), ...dto.userIds.map((id) => BigInt(id))];
+      return await this.conversationService.createConversation(
+        userIds,
+        dto.name,
+      );
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      throw new InternalServerErrorException('Failed to create conversation');
     }
+  }
 
-    @Post(':id/messages')
-    async sendMessage(
-        @Param('id', ParseIntPipe) id: number,
-        @Body('senderId') senderId: string,
-        @Body('content') content: string,
-        @Body('isEncrypted') isEncrypted?: boolean,
-    ) {
-        return this.conversationService.sendMessage(
-            BigInt(id),
-            BigInt(senderId),
-            content,
-            isEncrypted ?? false,
-        );
+  @Get()
+  @ApiOperation({ summary: 'Get all conversations for the authenticated user' })
+  async getConversationsForUser(@Req() req: any) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new BadRequestException('Authenticated userId is required');
     }
-
-    @Get(':id/messages')
-    async getMessages(
-        @Param('id', ParseIntPipe) id: number,
-        @Query('limit') limit?: string,
-    ) {
-        return this.conversationService.getMessages(
-            BigInt(id),
-            limit ? parseInt(limit) : 50,
-        )
+    try {
+      return await this.conversationService.getConversationsForUser(
+        BigInt(userId),
+      );
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      throw new InternalServerErrorException('Failed to fetch conversations');
     }
+  }
 
-    @Patch(':conversationId/messages/:messageId')
-    async editMessage(
-        @Param('conversationId', ParseIntPipe) conversationId: number,
-        @Param('messageId', ParseIntPipe) messageId: number,
-        @Body('editorId') editorId: string,
-        @Body('newContent') newContent: string,
-    ) {
+  @Post(':id/messages')
+  @ApiOperation({ summary: 'Send a message in a conversation' })
+  async sendMessage(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SendMessageDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new BadRequestException('Authenticated userId is required');
+    }
+    return this.conversationService.sendMessage(
+      BigInt(id),
+      BigInt(userId),
+      dto.content,
+      dto.isEncrypted ?? false,
+    );
+  }
+
+  @Get(':id/messages')
+  @ApiOperation({ summary: 'Get messages from a conversation' })
+  async getMessages(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('limit') limit?: string,
+  ) {
+    try {
+      return this.conversationService.getMessages(
+        BigInt(id),
+        limit ? parseInt(limit) : 50,
+      );
+    } catch (error: any) {
+      console.error('GetMessages error:', error);
+      throw new InternalServerErrorException('Failed to fetch messages');
+    }
+  }
+
+  @Patch(':conversationId/messages/:messageId')
+  @ApiOperation({ summary: 'Edit a message in a conversation' })
+  async editMessage(
+    @Param('conversationId', ParseIntPipe) conversationId: number,
+    @Param('messageId', ParseIntPipe) messageId: number,
+    @Body() dto: EditMessageDto,
+    @Req() req: any,
+  ) {
+    const editorId = req.user?.userId;
+    if (!editorId) {
+        throw new BadRequestException('Authenticated userId is required');
+    }
+    try {
         return this.conversationService.editMessage(
             BigInt(messageId),
             BigInt(editorId),
-            newContent,
+            dto.newContent,
         )
+    } catch (error: any) {
+        console.error('EditMessage error:', error);
+        throw new InternalServerErrorException('Failed to edit message');
     }
+  }
 
-    @Delete(':conversationId/messages/:messageId')
-    async deleteMessage(
-        @Param('conversationId', ParseIntPipe) conversationId: number,
-        @Param('messageId', ParseIntPipe) messageId: number,
-        @Body('requesterId') requesterId: string,
-    ) {
-        return this.conversationService.deleteMessage(
-            BigInt(messageId),
-            BigInt(requesterId),
-        )
-    }
+  @Delete(':conversationId/messages/:messageId')
+  async deleteMessage(
+    @Param('conversationId', ParseIntPipe) conversationId: number,
+    @Param('messageId', ParseIntPipe) messageId: number,
+    @Body('requesterId') requesterId: string,
+  ) {
+    return this.conversationService.deleteMessage(
+      BigInt(messageId),
+      BigInt(requesterId),
+    );
+  }
 }
