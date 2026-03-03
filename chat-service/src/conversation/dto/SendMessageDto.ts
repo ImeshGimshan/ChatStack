@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsBoolean, IsOptional, IsString } from "class-validator";
 
-export class SendMessageDto {
+export class SendConversationMessageDto {
     @ApiProperty({
         description: 'The content of the message',
         example: 'Hello, how are you?'
