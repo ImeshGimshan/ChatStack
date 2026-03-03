@@ -21,6 +21,7 @@ export class PostService {
         content: createPostDto.content,
         imageUrl: createPostDto.imageId,
         authorId: BigInt(userIdFromToken),
+        serverId: BigInt(createPostDto.serverId),
         title: createPostDto.title,
       },
     });

@@ -4,10 +4,16 @@ import {
   IsString,
   Max,
   MaxLength,
+  IsNumberString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePostDto {
+  @ApiProperty({ description: 'The ID of the server' })
+  @IsNumberString()
+  @IsNotEmpty()
+  serverId: string;
+
   @ApiProperty({ description: 'The content of the post' })
   @IsString()
   @IsNotEmpty()
