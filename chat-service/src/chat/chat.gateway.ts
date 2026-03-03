@@ -398,4 +398,55 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
     }
   }
+
+  // read receipts
+  @SubscribeMessage('mark-channel-message-read')
+  async handleMarkChannelMessageRead(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { channelId: string; messageId: string }
+  ) {
+    const userId = client.data.user.sub;
+    if(!payload.channelId || !payload.messageId) {
+      return client.emit('error', { message: 'Channel ID and Message ID are required' });
+    }
+
+    try {
+      await this.chatService.markChannelMessageRead(BigInt(payload.messageId), BigInt(userId));
+
+      this.server.to(`channel-${payload.channelId}`).emit('channel-message-read', {
+        messageId: payload.messageId,
+        channelId: payload.channelId,
+        userId,
+        readAt: new Date(),
+      });
+    } catch (error: any) {
+      console.error('Error marking channel message as read:', error);
+      client.emit('error', { message: 'Failed to mark message as read' });
+    }
+  }
+
+  @SubscribeMessage('mark-conversation-message-read')
+  async handleMarkConversationMessageRead(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { conversationId: string; messageId: string }
+  ) {
+    const userId = client.data.user.sub;
+    if(!payload.conversationId || !payload.messageId) {
+      return client.emit('error', { message: 'Conversation ID and Message ID are required' });
+    }
+
+    try {
+      await this.chatService.markConversationMessageRead(BigInt(payload.messageId), BigInt(userId));
+
+      this.server.to(`conversation-${payload.conversationId}`).emit('conversation-message-read', {
+        messageId: payload.messageId,
+        conversationId: payload.conversationId,
+        userId,
+        readAt: new Date(),
+      });
+    } catch (error: any) {
+      console.error('Error marking conversation message as read:', error);
+      client.emit('error', { message: 'Failed to mark message as read' });
+    }
+  }
 }
