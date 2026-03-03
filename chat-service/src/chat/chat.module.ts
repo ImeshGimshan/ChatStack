@@ -6,6 +6,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { ChannelsModule } from 'src/channel/Channels.module';
 import { ConversationModule } from 'src/conversation/conversation.module';
+import { ChatController } from './chat.controller';
 
 @Module({
   imports: [
@@ -20,5 +21,6 @@ import { ConversationModule } from 'src/conversation/conversation.module';
   ],
   providers: [ChatGateway, ChatService],
   exports: [ChatService],
+  controllers: [ChatController],
 })
 export class ChatModule {}
