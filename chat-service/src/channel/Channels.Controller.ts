@@ -17,8 +17,8 @@ import { ApiTags, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { CreateChannelDto } from './dto/CreateChannelDto';
 import { UpdateChannelDto } from './dto/UpdateChannelDto';
 import { AddMemberDto } from './dto/AddMemberDto';
-import { SendMessageDto } from './dto/SendMessageDto';
-import { EditMessageDto } from './dto/EditMessageDto';
+import { SendChannelMessageDto } from './dto/SendMessageDto';
+import { EditChannelMessageDto } from './dto/EditMessageDto';
 import { AddReactionDto } from './dto/AddReactionDto';
 
 @ApiTags('Channels')
@@ -82,10 +82,10 @@ export class ChannelsController {
   }
 
   @Post(':id/messages')
-  @ApiBody({ type: SendMessageDto })
+  @ApiBody({ type: SendChannelMessageDto })
   async sendMessage(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: SendMessageDto,
+    @Body() body: SendChannelMessageDto,
     @Req() req: any,
   ) {
     const senderId = req.user?.userId;
@@ -112,11 +112,11 @@ export class ChannelsController {
   }
 
   @Patch(':channelId/messages/:messageId')
-  @ApiBody({ type: EditMessageDto })
+  @ApiBody({ type: EditChannelMessageDto })
   async editMessage(
     @Param('channelId', ParseIntPipe) channelId: number,
     @Param('messageId', ParseIntPipe) messageId: number,
-    @Body() body: EditMessageDto,
+    @Body() body: EditChannelMessageDto,
     @Req() req: any,
   ) {
     const editorId = req.user?.userId;

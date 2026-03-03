@@ -21,7 +21,10 @@ model User {
   messageReactions                MessageReaction[]
   channelMessageReadReceipts      ChannelMessageReadReceipt[]
   conversationMessageReadReceipts ConversationMessageReadReceipt[]
-  keys                            Key[]
+  userKey                         UserKey?
+  posts                           Post[]                        @relation("PostAuthor")
+  comments                        Comment[]                     @relation("CommentAuthor")
+  ownedServers                    Server[]                      @relation("ServerOwner")
 
   @@map("users")
 }
@@ -36,16 +39,45 @@ model Server {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  createdBy BigInt?
+  owner     User?   @relation("ServerOwner", fields: [createdBy], references: [id])
+
   members  ServerMember[]
   channels Channel[]
   posts    Post[]
+  roles    Role[]
 
   @@map("servers")
 }
 
+model Role {
+  id                 BigInt   @id @default(autoincrement())
+  name               String
+  color              String?
+  position           Int      @default(0)
+  canManageServer    Boolean  @default(false)
+  canManageChannels  Boolean  @default(false)
+  canManageRoles     Boolean  @default(false)
+  canKickMembers     Boolean  @default(false)
+  canBanMembers      Boolean  @default(false)
+  canSendMessages    Boolean  @default(true)
+  canDeleteMessages  Boolean  @default(false)
+  canMentionEveryone Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  serverId BigInt
+  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  members ServerMember[]
+
+  @@index([serverId])
+  @@map("roles")
+}
+
 model ServerMember {
-  id     BigInt   @id @default(autoincrement())
-  role   String   @default("member") // admin, moderator, member
+  id       BigInt   @id @default(autoincrement())
+  nickname String?
+  isBanned Boolean  @default(false)
   joinedAt DateTime @default(now())
 
   serverId BigInt
@@ -53,6 +85,9 @@ model ServerMember {
 
   userId BigInt
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  roleId BigInt?
+  role   Role?   @relation(fields: [roleId], references: [id])
 
   @@unique([serverId, userId])
   @@index([serverId])
@@ -149,7 +184,7 @@ model MessageReaction {
   userId BigInt
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([channelMessageId, userId, emoji])
+  @@unique([userId, channelMessageId, emoji])
   @@index([channelMessageId])
   @@index([userId])
   @@map("message_reactions")
@@ -230,17 +265,22 @@ model ConversationMessageReadReceipt {
 // ─────────────────────────────────────────────
 model Post {
   id        BigInt   @id @default(autoincrement())
-  title     String
+  title     String?
   content   String   @db.Text
+  imageUrl  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   serverId BigInt
   server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
 
+  authorId BigInt
+  author   User   @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
   comments Comment[]
 
   @@index([serverId])
+  @@index([authorId])
   @@map("posts")
 }
 
@@ -253,23 +293,26 @@ model Comment {
   postId BigInt
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  authorId BigInt
+  author   User   @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
   @@index([postId])
+  @@index([authorId])
   @@map("comments")
 }
 
 // ─────────────────────────────────────────────
 // ENCRYPTION KEYS
 // ─────────────────────────────────────────────
-model Key {
+model UserKey {
   id        BigInt   @id @default(autoincrement())
   publicKey String   @db.Text
   createdAt DateTime @default(now())
 
-  userId BigInt
+  userId BigInt @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@map("keys")
+  @@map("user_keys")
 }
 
 // ─────────────────────────────────────────────

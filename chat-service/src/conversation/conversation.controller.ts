@@ -18,8 +18,8 @@ import { JwtAuthGuard } from 'src/auth/Jwt.Auth.guard';
 import { ConversationService } from './conversation.service';
 import e from 'express';
 import { CreateConversationDto } from './dto/CreateConversationDto';
-import { SendMessageDto } from './dto/SendMessageDto';
-import { EditMessageDto } from './dto/EditMessageDto';
+import { SendConversationMessageDto } from './dto/SendMessageDto';
+import { EditConversationMessageDto } from './dto/EditMessageDto';
 
 @ApiTags('Conversation')
 @ApiBearerAuth()
@@ -71,7 +71,7 @@ export class ConversationController {
   @ApiOperation({ summary: 'Send a message in a conversation' })
   async sendMessage(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: SendMessageDto,
+    @Body() dto: SendConversationMessageDto,
     @Req() req: any,
   ) {
     const userId = req.user?.userId;
@@ -108,7 +108,7 @@ export class ConversationController {
   async editMessage(
     @Param('conversationId', ParseIntPipe) conversationId: number,
     @Param('messageId', ParseIntPipe) messageId: number,
-    @Body() dto: EditMessageDto,
+    @Body() dto: EditConversationMessageDto,
     @Req() req: any,
   ) {
     const editorId = req.user?.userId;

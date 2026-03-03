@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class SendMessageDto {
+export class SendChannelMessageDto {
   @ApiProperty({ description: 'The content of the message' })
   @IsString()
   content: string;
