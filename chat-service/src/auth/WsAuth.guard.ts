@@ -21,7 +21,7 @@ export class WsAuthGuard implements CanActivate {
             });
 
             //attach user info to client from springboot
-            client.user = payload;
+            client.data.user = payload;
             return true;
         }
         catch (err){

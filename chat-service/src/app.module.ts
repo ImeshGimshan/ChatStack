@@ -5,12 +5,11 @@ import { PostModule } from './post/post.module';
 import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
 import { CommentModule } from './comment/comment.module';
-import { KeysModule } from './encryption/keys/keys.module';
 import { ChannelsModule } from './channel/Channels.module';
 import { PermissionModule } from './permission/permission.module';
 import { ServerModule } from './server/server.module';
-import { ConversationService } from './conversation/conversation.service';
 import { ConversationModule } from './conversation/conversation.module';
+import { EncryptionModule } from './encryption/encryption.module';
 
 @Module({
   imports: [
@@ -19,14 +18,12 @@ import { ConversationModule } from './conversation/conversation.module';
     PrismaModule,
     PostModule,
     ChatModule,
-    PostModule,
     CommentModule,
-    KeysModule,
     ChannelsModule,
     PermissionModule,
     ServerModule,
     ConversationModule,
+    EncryptionModule,
   ],
-  providers: [ConversationService],
 })
 export class AppModule {}

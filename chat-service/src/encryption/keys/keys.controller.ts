@@ -23,7 +23,7 @@ export class KeysController {
   @Post()
   @HttpCode(HttpStatus.OK)
   async uploadPublicKey(@Request() req, @Body('publicKey') publicKey: string) {
-    const userId = req.user.sub;
+    const userId = req.user.userId;
     return this.keysService.savePublicKey(userId, publicKey);
   }
 
@@ -34,7 +34,7 @@ export class KeysController {
 
   @Get()
   async getMyPublicKey(@Request() req) {
-    const userId = req.user.sub;
+    const userId = req.user.userId;
     return this.keysService.getPublicKey(userId);
   }
 

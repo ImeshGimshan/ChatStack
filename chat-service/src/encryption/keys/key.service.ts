@@ -37,6 +37,14 @@ export class KeyService {
     };
   }
 
+  async getUserPublicKey(userId: bigint): Promise<string | null> {
+    const userKey = await this.prisma.userKey.findUnique({
+      where: { userId },
+    });
+
+    return userKey?.publicKey || null;
+  }
+
   async getMultiplePublicKeys(userIds: string[]) {
     const keys = await this.prisma.userKey.findMany({
       where: {

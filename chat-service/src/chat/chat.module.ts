@@ -7,6 +7,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { ChannelsModule } from 'src/channel/Channels.module';
 import { ConversationModule } from 'src/conversation/conversation.module';
 import { ChatController } from './chat.controller';
+import { EncryptionModule } from 'src/encryption/encryption.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ChatController } from './chat.controller';
     AuthModule,
     ChannelsModule,
     ConversationModule,
+    EncryptionModule,
   ],
   providers: [ChatGateway, ChatService],
   exports: [ChatService],
