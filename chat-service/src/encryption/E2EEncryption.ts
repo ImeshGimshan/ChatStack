@@ -41,7 +41,29 @@ export class E2EEncryption {
   }
 
   /**
-   * Decrypt a message from a specific sender
+   * Decrypt a message encrypted by the SERVER using crypto_box_seal
+   * Use this when isEncrypted=true messages come FROM the server
+   * @param encryptedData - Base64 encoded sealed ciphertext
+   * @param recipientPublicKey - Recipient's public key (base64)
+   * @param recipientPrivateKey - Recipient's private key (base64)
+   * @returns Decrypted plain text message
+   */
+  static decryptSealedMessage(
+    encryptedData: string,
+    recipientPublicKey: string,
+    recipientPrivateKey: string,
+  ): string {
+    const ciphertext = sodium.from_base64(encryptedData);
+    const decrypted = sodium.crypto_box_seal_open(
+      ciphertext,
+      sodium.from_base64(recipientPublicKey),
+      sodium.from_base64(recipientPrivateKey),
+    );
+    return sodium.to_string(decrypted);
+  }
+
+  /**
+   * Decrypt a message from a specific sender (peer-to-peer, no server involvement)
    * @param encryptedData - Encrypted message (JSON string)
    * @param senderPublicKey - Sender's public key (base64)
    * @param recipientPrivateKey - Recipient's private key (base64)
