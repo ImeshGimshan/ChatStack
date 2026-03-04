@@ -22,7 +22,7 @@ import { ConversationService } from 'src/conversation/conversation.service';
   cors: {
     origin: '*',
   },
-  nameSpace: '/chat',
+  namespace: '/chat',
 })
 
 @UseGuards(WsAuthGuard)
@@ -55,7 +55,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     client.join(`user-${userId}`);
-    console.log(`✅ Client connected: ${client.id} (User: ${username})`);
+    console.log(`Client connected: ${client.id} (User: ${username})`);
 
     await this.redis.setex(
       `user-online: ${userId}`,
@@ -81,7 +81,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (userId) {
       await this.redis.del(`user-online: ${userId}`);
-      console.log(`❌ Client disconnected: ${client.id} (User: ${username})`);
+      console.log(`Client disconnected: ${client.id} (User: ${username})`);
 
       this.server.emit('user-offline', {
         userId,

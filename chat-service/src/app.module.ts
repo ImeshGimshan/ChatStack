@@ -9,7 +9,6 @@ import { KeysModule } from './encryption/keys/keys.module';
 import { ChannelsModule } from './channel/Channels.module';
 import { PermissionModule } from './permission/permission.module';
 import { ServerModule } from './server/server.module';
-import { ConversationService } from './conversation/conversation.service';
 import { ConversationModule } from './conversation/conversation.module';
 
 @Module({
@@ -19,7 +18,6 @@ import { ConversationModule } from './conversation/conversation.module';
     PrismaModule,
     PostModule,
     ChatModule,
-    PostModule,
     CommentModule,
     KeysModule,
     ChannelsModule,
@@ -27,6 +25,5 @@ import { ConversationModule } from './conversation/conversation.module';
     ServerModule,
     ConversationModule,
   ],
-  providers: [ConversationService],
 })
 export class AppModule {}
