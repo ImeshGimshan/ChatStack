@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { EncryptionService } from 'src/encryption/encryption.service';
+import { KeyService } from 'src/encryption/keys/key.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ChannelsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryptionService: EncryptionService,
+    private keyService: KeyService,
+  ) {}
 
   async getChannelsForServer(serverId: bigint) {
     return this.prisma.channel.findMany({
@@ -69,16 +75,53 @@ export class ChannelsService {
     channelId: bigint,
     senderId: bigint,
     content: string,
-    isEncrypted = false,
+    isEncrypted: boolean = false,
   ) {
-    return this.prisma.channelMessage.create({
-      data: {
-        channelId,
-        senderId,
-        content,
-        isEncrypted,
-      },
-    });
+    try {
+      let messageContent = content;
+      if (isEncrypted) {
+        const members = await this.prisma.channelMember.findMany({
+          where: { channelId },
+          include: {
+            user: true,
+          },
+        });
+
+        if (members.length === 0) {
+          throw new BadRequestException('No members in channel');
+        }
+
+        const recipient = members.find((m) => m.userId !== senderId);
+        if (!recipient) {
+          throw new BadRequestException('No recipient found for encryption');
+        }
+
+        const recipientKey = await this.keyService.getUserPublicKey(
+          recipient.userId,
+        );
+        if (!recipientKey) {
+          throw new BadRequestException('Recipient does not have a public key');
+        }
+
+        messageContent = this.encryptionService.encryptMessage(
+          content,
+          recipientKey,
+        );
+      }
+      const message = await this.prisma.channelMessage.create({
+        data: {
+          channelId,
+          senderId,
+          content: messageContent,
+          isEncrypted,
+        },
+      });
+      console.log('Message sent:', message);
+      return message;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
   }
 
   async getMessages(channelId: bigint, limit = 50) {
