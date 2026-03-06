@@ -14,9 +14,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ChatService } from './chat.service';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { createAdapter } from '@socket.io/redis-adapter';
 import { ChannelsService } from 'src/channel/Channels.Service';
 import { ConversationService } from 'src/conversation/conversation.service';
+import { KeyService } from 'src/encryption/keys/key.service';
+import { EncryptionService } from 'src/encryption/encryption.service';
 
 @WebSocketGateway({
   cors: {
@@ -33,15 +34,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private chatService: ChatService,
     private channelService: ChannelsService,
     private conversationService: ConversationService,
+    private encryptionService: EncryptionService,
+    private keyService: KeyService,
     @InjectRedis() private readonly redis: Redis,
   ) {}
 
-  afterInit(server: Server) {
-    const pubClient = this.redis.duplicate();
-    const subClient = this.redis.duplicate();
-
-    server.adapter(createAdapter(pubClient, subClient));
-
+  afterInit() {
     console.log('ChatGateway initialized with Redis adapter');
   }
 
