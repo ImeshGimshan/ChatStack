@@ -29,3 +29,10 @@ Frontend/build/
 # --- DevOps / Secrets ---
 .env
 docker-compose.override.yml
+env-examples/.env.auth-service
+env-examples/.env.chat-service
+env-examples/.env.email-service
+env-examples/.env.frontend
+env-examples/.env.media-service
+env-examples/.env.user-service
+env-examples/.env.social-service

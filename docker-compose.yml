@@ -1,151 +1,24 @@
 version: "3.8"
 
 services:
-  auth-db:
-    image: postgres:15-alpine
-    container_name: auth-pg-container
-    restart: always
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "5432:5432"
-    volumes:
-      - auth-postgres-data:/var/lib/postgresql/data
-    networks:
-      - app-network
-    
-  chat-db:
-    image: postgres:16-alpine
-    container_name: chat-postgres
-    restart: always
-    environment:
-      POSTGRES_USER: ${CHAT_DB_USER}
-      POSTGRES_PASSWORD: ${CHAT_DB_PASSWORD}
-      POSTGRES_DB: ${CHAT_DB_NAME}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${CHAT_DB_USER} -d ${CHAT_DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "5434:5432"
-    volumes:
-      - chat-postgres-data:/var/lib/postgresql/data
-    networks:
-      - app-network
-
-  social-db:
-    image: postgres:16-alpine
-    container_name: social-postgres
-    restart: always
-    environment:
-      POSTGRES_USER: ${SOCIAL_DB_USER}
-      POSTGRES_PASSWORD: ${SOCIAL_DB_PASSWORD}
-      POSTGRES_DB: ${SOCIAL_DB_NAME}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SOCIAL_DB_USER} -d ${SOCIAL_DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "5433:5432"
-    volumes:
-      - social-postgres-data:/var/lib/postgresql/data
-    networks:
-      - app-network
-
-  test-db:
-    image: postgres:16-alpine
-    container_name: test-postgres
-    restart: always
-    environment:
-      POSTGRES_USER: ${TEST_DB_USER}
-      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD}
-      POSTGRES_DB: ${TEST_DB_NAME}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${TEST_DB_USER} -d ${TEST_DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "5435:5432"
-    volumes:
-      - test-postgres-data:/var/lib/postgresql/data
-    networks:
-      - app-network
-
-  mongodb:
-    image: mongo:7
-    container_name: mongo-container
-    restart: always
-    ports:
-      - "27018:27017"
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - mongodb-data:/data/db
-    networks:
-      - app-network
-
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672" # communication port
-      - "15672:15672" # management UI port
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-
-
-  redis:
-    image: redis:7-alpine
-    container_name: chat-redis
-    restart: always
-    ports:
-      - "6379:6379"
-    networks:
-      - app-network
-    volumes:
-      - redis-data:/data
-
   auth-service:
     build: ./AuthService
     container_name: auth-service-container
     ports:
       - "8080:8080"
     environment:
-      - DB_HOST=auth-db
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_PORT=5672
-      - SPRING_RABBITMQ_USERNAME=guest
-      - SPRING_RABBITMQ_PASSWORD=guest
-    depends_on:
-      - auth-db
-      - rabbitmq
+      - SPRING_RABBITMQ_HOST=${SPRING_RABBITMQ_HOST}
+      - SPRING_RABBITMQ_PORT=${SPRING_RABBITMQ_PORT}
+      - SPRING_RABBITMQ_USERNAME=${SPRING_RABBITMQ_USERNAME}
+      - SPRING_RABBITMQ_PASSWORD=${SPRING_RABBITMQ_PASSWORD}
+      - SPRING_RABBITMQ_VIRTUAL_HOST=${SPRING_RABBITMQ_VIRTUAL_HOST}
+      - SPRING_RABBITMQ_SSL_ENABLED=${SPRING_RABBITMQ_SSL_ENABLED}
+      - GMAIL_USER=${GMAIL_USER}
+      - GMAIL_PASS=${GMAIL_PASS}
     networks:
       - app-network
   social-service:
@@ -155,10 +28,7 @@ services:
       - "3334:3334"
     environment:
       - PORT=3334
-      - DATABASE_URL=postgresql://${SOCIAL_DB_USER}:${SOCIAL_DB_PASSWORD}@social-db:5432/${SOCIAL_DB_NAME}?schema=public
-    depends_on:
-      social-db:
-        condition: service_healthy
+      - SOCIAL_DATABASE_URL=${SOCIAL_DATABASE_URL}
     networks:
       - app-network
 
@@ -169,14 +39,11 @@ services:
       - "3333:3333"
     environment:
       - JWT_SECRET=${JWT_SECRET}
-      - DATABASE_URL=postgresql://${CHAT_DB_USER}:${CHAT_DB_PASSWORD}@chat-db:5432/${CHAT_DB_NAME}
+      - CHAT_DATABASE_URL=${CHAT_DATABASE_URL}
       - AUTH_SERVICE_URL=http://auth-service:8080
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - REDIS_URL=${REDIS_URL}
     depends_on:
-      - chat-db
       - auth-service
-      - redis
     networks:
       - app-network
 
@@ -196,12 +63,9 @@ services:
     build: ./email-service
     container_name: email-service-container
     environment:
-      - RABBIT_MQ_URL=amqp://guest:guest@rabbitmq:5672
+      - RABBIT_MQ_URL=${RABBIT_MQ_URL}
       - GMAIL_PASS=${GMAIL_PASS}
       - GMAIL_USER=${GMAIL_USER}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
     networks:
       - app-network
 
@@ -221,8 +85,6 @@ services:
       NODE_ENV: production
       CORS_ORIGIN: ${CORS_ORIGIN}
     depends_on:
-      mongodb:
-        condition: service_healthy
       auth-service:
         condition: service_started
     networks:
@@ -254,11 +116,4 @@ networks:
   app-network:
     driver: bridge
 
-volumes:
-  auth-postgres-data:
-  chat-postgres-data:
-  social-postgres-data:
-  test-postgres-data:
-  mongodb-data:
-  redis-data:   
-  rabbitmq-data: 
+volumes: {}

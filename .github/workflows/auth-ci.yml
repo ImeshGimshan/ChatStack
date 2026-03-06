@@ -1,4 +1,4 @@
-name: Auth Service CI
+name: Auth Service CI/CD
 
 on:
   push:
@@ -6,10 +6,13 @@ on:
       - 'AuthService/**'
     branches: [main]
 
-jobs:
-  build-auth:
-    runs-on: ubuntu-latest
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: imeshgimshan/auth-service
 
+jobs:
+  test:
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:15-alpine
@@ -24,7 +27,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
       rabbitmq:
         image: rabbitmq:3-management
         env:
@@ -37,7 +39,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 21
@@ -46,15 +47,13 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
-      
       - name: Wait for Postgres
         run: |
           until pg_isready -h localhost -p 5432; do
             echo "Waiting for postgres..."
             sleep 2
           done
-      
-      - name: Build and Test AuthService
+      - name: Build and Test
         working-directory: ./AuthService
         run: |
           chmod +x mvnw
@@ -65,11 +64,13 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: password
           SPRING_RABBITMQ_HOST: localhost
           SPRING_RABBITMQ_PORT: 5672
-          
+          SPRING_RABBITMQ_USERNAME: guest
+          SPRING_RABBITMQ_PASSWORD: guest
+          SPRING_RABBITMQ_VIRTUAL_HOST: /
+          SPRING_RABBITMQ_SSL_ENABLED: false
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
@@ -77,3 +78,55 @@ jobs:
           name: coverage-report
           path: ./AuthService/target/site/jacoco
           retention-days: 30
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./AuthService
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Deploy to Amazon ECS
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --service auth-service \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION }}
