@@ -1,6 +1,7 @@
 name: Email Service CI/CD
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'email-service/**'
