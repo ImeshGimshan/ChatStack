@@ -12,7 +12,7 @@ export const useSocket = () => {
             return;
         }
 
-        const socketInstance = io('http://localhost:3333', {
+        const socketInstance = io(process.env.NEXT_PUBLIC_CHAT_API || 'http://localhost:3333',{
             auth: { token },
             transports: ['websocket'],
         });
