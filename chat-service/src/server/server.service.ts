@@ -147,4 +147,12 @@ export class ServerService {
       },
     });
   }
+  async getServersByOwner(ownerId: bigint) {
+    return this.prisma.server.findMany({
+      where: { createdBy: ownerId },
+      include: {
+        channels: true,
+      },
+    });
+  }
 }
