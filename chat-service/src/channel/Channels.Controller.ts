@@ -33,6 +33,13 @@ export class ChannelsController {
     return this.channelsService.getChannelsForServer(BigInt(serverId));
   }
 
+  @Get('me')
+  async getMyChannels(@Req() req: any) {
+    const userId = req.user?.userId;
+    if (!userId) throw new Error('Authenticated userId is required');
+    return this.channelsService.getMyChannels(BigInt(userId));
+  }
+
   @Post()
   @ApiBody({ type: CreateChannelDto })
   async createChannel(
