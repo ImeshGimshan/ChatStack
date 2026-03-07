@@ -1,9 +1,11 @@
 import authApi from "@/api/authApi";
 import { LoginCredentials, LoginResponse, RegisterCredentials, RegisterResponse, VerifyEmailResponse } from "@/lib/types";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const saveToken = (token: string): void => {
     localStorage.setItem('authToken', token);
+    Cookies.set('token', token, { expires: 7 }); // needed for Socket.IO auth hook
 }
 
 const getToken = (): string | null => {
@@ -59,6 +61,7 @@ export const authService = {
 
     logout(): void {
         removeToken();
+        Cookies.remove('token');
         authApi.post('/api/auth/logout').catch(() => {});
         window.location.href = '/login';
     },
