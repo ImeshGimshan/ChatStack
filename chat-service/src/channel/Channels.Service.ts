@@ -20,6 +20,15 @@ export class ChannelsService {
     });
   }
 
+  async getMyChannels(userId: bigint) {
+    const memberships = await this.prisma.channelMember.findMany({
+      where: { userId },
+      include: { channel: true },
+      orderBy: { joinedAt: 'desc' },
+    });
+    return memberships.map((m) => m.channel);
+  }
+
   async createChannel(serverId: bigint, name: string, description: string) {
     return this.prisma.channel.create({
       data: {

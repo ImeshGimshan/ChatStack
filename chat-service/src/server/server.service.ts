@@ -155,4 +155,16 @@ export class ServerService {
       },
     });
   }
+
+  async getServersByMember(userId: bigint) {
+    const memberships = await this.prisma.serverMember.findMany({
+      where: { userId },
+      include: {
+        server: {
+          include: { channels: true },
+        },
+      },
+    });
+    return memberships.map((m) => m.server);
+  }
 }

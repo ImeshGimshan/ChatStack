@@ -31,6 +31,15 @@ export class ServerController {
     return this.serverService.getServersByOwner(BigInt(userId));
   }
 
+  @Get('mine')
+  async getMyMemberServers(@Req() req: any) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new Error('Authenticated userId is required');
+    }
+    return this.serverService.getServersByMember(BigInt(userId));
+  }
+
   @Post()
   @ApiBody({ type: CreateServerDto })
   async createServer(@Body() body: CreateServerDto, @Req() req: any) {
