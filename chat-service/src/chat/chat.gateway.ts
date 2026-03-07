@@ -18,6 +18,7 @@ import { ChannelsService } from 'src/channel/Channels.Service';
 import { ConversationService } from 'src/conversation/conversation.service';
 import { KeyService } from 'src/encryption/keys/key.service';
 import { EncryptionService } from 'src/encryption/encryption.service';
+import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
   cors: {
@@ -36,6 +37,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private conversationService: ConversationService,
     private encryptionService: EncryptionService,
     private keyService: KeyService,
+    private jwtService: JwtService,
     @InjectRedis() private readonly redis: Redis,
   ) {}
 
@@ -44,8 +46,34 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleConnection(client: Socket) {
+    // WsAuthGuard only runs on @SubscribeMessage events, NOT on handleConnection.
+    // Decode the JWT here directly so client.data.user is populated.
+    const token =
+      client.handshake.auth?.token ||
+      client.handshake.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      console.error('handleConnection: No token — disconnecting.');
+      client.disconnect();
+      return;
+    }
+
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET,
+      });
+      // Populate client.data so WsAuthGuard can also find it later
+      client.data.user = payload;
+    } catch (err: any) {
+      console.error('handleConnection: Invalid token —', err.message);
+      client.disconnect();
+      return;
+    }
+
     const userId = client.data.user?.sub;
-    const username = client.data.user?.username;
+    // Spring Boot JWT only sets 'sub' to the userId string — no username claim.
+    // Use a display name based on userId; real username can be fetched from auth-service later.
+    const username = client.data.user?.username || `user-${userId}`;
 
     if (!userId) {
       client.disconnect();
@@ -53,10 +81,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     client.join(`user-${userId}`);
-    console.log(`Client connected: ${client.id} (User: ${username})`);
+    console.log(`Client connected: ${client.id} (User ID: ${userId})`);
 
     await this.redis.setex(
-      `user-online: ${userId}`,
+      `user-online:${userId}`,
       3600,
       JSON.stringify({
         userId,

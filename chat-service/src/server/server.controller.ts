@@ -22,6 +22,15 @@ import { JwtAuthGuard } from 'src/auth/Jwt.Auth.guard';
 export class ServerController {
   constructor(private readonly serverService: ServerService) {}
 
+  @Get('me')
+  async getMyServers(@Req() req: any) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new Error('Authenticated userId is required');
+    }
+    return this.serverService.getServersByOwner(BigInt(userId));
+  }
+
   @Post()
   @ApiBody({ type: CreateServerDto })
   async createServer(@Body() body: CreateServerDto, @Req() req: any) {

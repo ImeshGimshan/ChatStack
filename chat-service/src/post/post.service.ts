@@ -35,26 +35,32 @@ export class PostService {
       },
     });
 
+    if (posts.length === 0) return [];
+
     // Extract unique author IDs
     const authorIds = [...new Set(posts.map((post) => Number(post.authorId)))];
 
-    // Fetch user details from auth-service
-    const users = await this.authService.getUsersByIds(authorIds);
+    // Fetch user details from auth-service — fail gracefully if unavailable
+    let userMap = new Map<number, any>();
+    try {
+      const users = await this.authService.getUsersByIds(authorIds);
+      userMap = new Map(users.map((user) => [user.id, user]));
+    } catch {
+      // Auth service unreachable — posts will show authorId as display name
+    }
 
-    // Create a map for quick lookup
-    const userMap = new Map(users.map((user) => [user.id, user]));
-
-    // Merge posts with author data
+    // Merge posts with author data (author may be null if auth-service is down)
     return posts.map((post) => ({
-      id: post.id,
+      id: Number(post.id),
       title: post.title,
       content: post.content,
       imageUrl: post.imageUrl,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       authorId: post.authorId.toString(),
-      author: userMap.get(Number(post.authorId)) || null,
+      author: userMap.get(Number(post.authorId)) ?? null,
     }));
+
   }
 
   async updatePost(

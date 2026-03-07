@@ -5,8 +5,18 @@ import { RedisIoAdapter } from './chat/redis-io.adapter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
+  // Fix BigInt JSON serialization (Prisma BigInt → string) before anything else
+  (BigInt.prototype as any).toJSON = function () {
+    return this.toString();
+  };
+
   const app = await NestFactory.create(AppModule);
-  app.enableCors({ origin: '*' });
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false,
+  });
 
   const redisIoAdapter = new RedisIoAdapter(app);
   await redisIoAdapter.connectToRedis();
@@ -30,9 +40,5 @@ async function bootstrap() {
   );
 
   await app.listen(process.env.PORT ?? 3333);
-  // Fix for BigInt serialization issue in spring boot
-  (BigInt.prototype as any).toJSON = function () {
-    return this.toString();
-  };
 }
 bootstrap();
