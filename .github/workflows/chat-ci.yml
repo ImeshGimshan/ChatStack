@@ -1,6 +1,7 @@
 name: Chat Service CI/CD
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'chat-service/**'
