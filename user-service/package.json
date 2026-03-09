@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build": "node --check index.js"
   },
   "keywords": ["microservices", "profile", "user"],
   "author": "",
