@@ -81,7 +81,7 @@ services:
       PORT: ${USER_SERVICE_PORT}
       MONGO_URI: ${MONGO_URI}
       JWT_SECRET: ${JWT_SECRET}
-      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
+      AUTH_SERVICE_URL: http://auth-service:8080
       NODE_ENV: production
       CORS_ORIGIN: ${CORS_ORIGIN}
     depends_on:

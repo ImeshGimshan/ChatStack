@@ -93,6 +93,7 @@ public class AuthController {
                     Map<String, Object> response = new HashMap<>();
                     response.put("id", user.getId());
                     response.put("username", user.getUsername());
+                    response.put("email", user.getEmail());
                     // add other fields you need like email or profile picture
                     return ResponseEntity.ok(response);
                 })

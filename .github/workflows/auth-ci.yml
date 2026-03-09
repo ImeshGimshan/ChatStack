@@ -1,6 +1,7 @@
 name: Auth Service CI/CD
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'AuthService/**'
