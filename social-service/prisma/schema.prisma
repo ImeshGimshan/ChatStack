@@ -6,15 +6,23 @@ datasource db {
     provider = "postgresql"
 }
 
-model friendship {
-    id          BigInt @id @default(autoincrement())
-    requesterId BigInt
-    addresseeId BigInt
-    status      friendshipStatus
+model Connection {
+    id          Int              @id @default(autoincrement())
+    requesterId Int
+    addresseeId Int
+    status      ConnectionStatus @default(PENDING)
+    message     String?
+    createdAt   DateTime         @default(now())
+    updatedAt   DateTime         @updatedAt
+
+    @@unique([requesterId, addresseeId])
+    @@index([addresseeId])
 }
 
-enum friendshipStatus {
+enum ConnectionStatus {
     PENDING
-    FRIENDS
+    ACCEPTED
+    REJECTED
+    WITHDRAWN
     BLOCKED
 }
