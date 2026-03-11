@@ -29,6 +29,7 @@ services:
     environment:
       - PORT=3334
       - SOCIAL_DATABASE_URL=${SOCIAL_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - app-network
 
