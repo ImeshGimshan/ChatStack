@@ -132,6 +132,99 @@ export class ConnectionService {
     });
   }
 
+  // Outgoing requests you sent that are still pending
+  async getSentRequests(userId: number) {
+    return this.prisma.connection.findMany({
+      where: {
+        status: ConnectionStatus.PENDING,
+        requesterId: userId,
+      },
+    });
+  }
+
+  // Remove an accepted connection
+  async removeConnection(currentUserId: number, connectionId: number) {
+    const conn = await this.prisma.connection.findUnique({
+      where: { id: connectionId },
+    });
+    if (!conn) throw new NotFoundException('Connection not found');
+    if (conn.requesterId !== currentUserId && conn.addresseeId !== currentUserId)
+      throw new ForbiddenException('Not your connection');
+    if (conn.status !== 'ACCEPTED')
+      throw new BadRequestException('Connection is not active');
+    await this.prisma.connection.delete({ where: { id: connectionId } });
+    return { message: 'Connection removed' };
+  }
+
+  // Unblock a user
+  async unblockUser(currentUserId: number, targetUserId: number) {
+    const conn = await this.prisma.connection.findFirst({
+      where: {
+        requesterId: currentUserId,
+        addresseeId: targetUserId,
+        status: ConnectionStatus.BLOCKED,
+      },
+    });
+    if (!conn) throw new NotFoundException('No block found for this user');
+    await this.prisma.connection.delete({ where: { id: conn.id } });
+    return { message: 'User unblocked' };
+  }
+
+  // Total accepted connection count for a user (for profile cards)
+  async getConnectionCount(userId: number) {
+    const count = await this.prisma.connection.count({
+      where: {
+        status: ConnectionStatus.ACCEPTED,
+        OR: [{ requesterId: userId }, { addresseeId: userId }],
+      },
+    });
+    return { userId, connectionCount: count };
+  }
+
+  // Mutual connections between current user and a target user
+  async getMutualConnections(currentUserId: number, targetUserId: number) {
+    const [myConns, theirConns] = await Promise.all([
+      this.prisma.connection.findMany({
+        where: {
+          status: ConnectionStatus.ACCEPTED,
+          OR: [{ requesterId: currentUserId }, { addresseeId: currentUserId }],
+        },
+        select: { requesterId: true, addresseeId: true },
+      }),
+      this.prisma.connection.findMany({
+        where: {
+          status: ConnectionStatus.ACCEPTED,
+          OR: [{ requesterId: targetUserId }, { addresseeId: targetUserId }],
+        },
+        select: { requesterId: true, addresseeId: true },
+      }),
+    ]);
+
+    const myNetworkIds = new Set(
+      myConns.map((c) =>
+        c.requesterId === currentUserId ? c.addresseeId : c.requesterId,
+      ),
+    );
+    const theirNetworkIds = theirConns.map((c) =>
+      c.requesterId === targetUserId ? c.addresseeId : c.requesterId,
+    );
+
+    const mutualIds = theirNetworkIds.filter(
+      (id) => id !== currentUserId && myNetworkIds.has(id),
+    );
+    return { mutualConnections: mutualIds, count: mutualIds.length };
+  }
+
+  // View another user's accepted connections publicly
+  async getUserConnections(targetUserId: number) {
+    return this.prisma.connection.findMany({
+      where: {
+        status: ConnectionStatus.ACCEPTED,
+        OR: [{ requesterId: targetUserId }, { addresseeId: targetUserId }],
+      },
+    });
+  }
+
   async getStatus(currentUserId: number, targetUserId: number) {
     const conn = await this.prisma.connection.findFirst({
       where: {
@@ -142,6 +235,54 @@ export class ConnectionService {
       },
     });
     return { status: conn?.status ?? 'NONE' };
+  }
+
+  // People You May Know — users connected to my connections but not yet connected to me
+  async getSuggestions(userId: number) {
+    // Get all my accepted connection partner IDs
+    const myConnections = await this.prisma.connection.findMany({
+      where: {
+        status: ConnectionStatus.ACCEPTED,
+        OR: [{ requesterId: userId }, { addresseeId: userId }],
+      },
+      select: { requesterId: true, addresseeId: true },
+    });
+
+    const myNetworkIds = myConnections.map((c) =>
+      c.requesterId === userId ? c.addresseeId : c.requesterId,
+    );
+
+    if (myNetworkIds.length === 0) return [];
+
+    // Get connections of my connections
+    const secondDegree = await this.prisma.connection.findMany({
+      where: {
+        status: ConnectionStatus.ACCEPTED,
+        OR: [
+          { requesterId: { in: myNetworkIds } },
+          { addresseeId: { in: myNetworkIds } },
+        ],
+      },
+      select: { requesterId: true, addresseeId: true },
+    });
+
+    // Collect candidate IDs — exclude myself and already-connected users
+    const excludeIds = new Set([userId, ...myNetworkIds]);
+    const candidateIds = new Set<number>();
+    for (const c of secondDegree) {
+      if (!excludeIds.has(c.requesterId)) candidateIds.add(c.requesterId);
+      if (!excludeIds.has(c.addresseeId)) candidateIds.add(c.addresseeId);
+    }
+
+    // Return suggestion list with mutual count
+    const suggestions = Array.from(candidateIds).map((id) => ({
+      userId: id,
+      mutualConnections: secondDegree.filter(
+        (c) => c.requesterId === id || c.addresseeId === id,
+      ).length,
+    }));
+
+    return suggestions.sort((a, b) => b.mutualConnections - a.mutualConnections);
   }
 
   private async findPendingForAddressee(

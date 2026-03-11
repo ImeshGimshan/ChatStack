@@ -21,22 +21,22 @@ export class ConnectionController {
     @Param('addresseeId', ParseIntPipe) addresseeId: number,
     @Body('message') message?: string,
   ) {
-    return await this.service.sendRequest(req.user.id, addresseeId, message);
+    return await this.service.sendRequest(req.userId, addresseeId, message);
   }
 
   @Patch(':id/accept')
   async accept(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
-    return await this.service.acceptRequest(req.user.id, id);
+    return await this.service.acceptRequest(req.userId, id);
   }
 
   @Patch(':id/reject')
   async reject(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
-    return await this.service.rejectRequest(req.user.id, id);
+    return await this.service.rejectRequest(req.userId, id);
   }
 
   @Delete(':id/withdraw')
   async withdraw(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
-    return await this.service.withdrawRequest(req.user.id, id);
+    return await this.service.withdrawRequest(req.userId, id);
   }
 
   @Post('block/:targetUserId')
@@ -44,17 +44,58 @@ export class ConnectionController {
     @Req() req: any,
     @Param('targetUserId', ParseIntPipe) targetUserId: number,
   ) {
-    return await this.service.blockUser(req.user.id, targetUserId);
+    return await this.service.blockUser(req.userId, targetUserId);
   }
 
   @Get('me')
   async myConnections(@Req() req: any) {
-    return await this.service.getMyConnections(req.user.id);
+    return await this.service.getMyConnections(req.userId);
   }
 
   @Get('pending')
   async pending(@Req() req: any) {
-    return await this.service.getPendingRequests(req.user.id);
+    return await this.service.getPendingRequests(req.userId);
+  }
+
+  @Get('sent')
+  async sent(@Req() req: any) {
+    return await this.service.getSentRequests(req.userId);
+  }
+
+  @Delete(':id/remove')
+  async remove(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    return await this.service.removeConnection(req.userId, id);
+  }
+
+  @Delete('unblock/:targetUserId')
+  async unblock(
+    @Req() req: any,
+    @Param('targetUserId', ParseIntPipe) targetUserId: number,
+  ) {
+    return await this.service.unblockUser(req.userId, targetUserId);
+  }
+
+  @Get('count/:userId')
+  count(@Param('userId', ParseIntPipe) userId: number) {
+    return this.service.getConnectionCount(userId);
+  }
+
+  @Get('mutual/:targetUserId')
+  mutual(
+    @Req() req: any,
+    @Param('targetUserId', ParseIntPipe) targetUserId: number,
+  ) {
+    return this.service.getMutualConnections(req.userId, targetUserId);
+  }
+
+  @Get('user/:userId')
+  userConnections(@Param('userId', ParseIntPipe) userId: number) {
+    return this.service.getUserConnections(userId);
+  }
+
+  @Get('suggestions')
+  suggestions(@Req() req: any) {
+    return this.service.getSuggestions(req.userId);
   }
 
   @Get('status/:targetUserId')
