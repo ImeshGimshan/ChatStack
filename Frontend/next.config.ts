@@ -22,6 +22,16 @@ const nextConfig: NextConfig = {
                 source: "/api/media/:path*",
                 destination: `${process.env.NEXT_PUBLIC_MEDIA_API || "http://localhost:3004"}/:path*`,
             },
+            // Proxy user-service calls
+            {
+                source: "/api/user/:path*",
+                destination: `${process.env.NEXT_PUBLIC_USER_API || "http://localhost:5010"}/:path*`,
+            },
+            // Proxy social-service calls
+            {
+                source: "/api/social/:path*",
+                destination: `${process.env.NEXT_PUBLIC_SOCIAL_API || "http://localhost:3334"}/:path*`,
+            },
         ];
     },
 };
