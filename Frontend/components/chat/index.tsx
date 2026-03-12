@@ -10,13 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import PostFeed from "@/components/feed/PostFeed";
+import NetworkTab from "@/components/network/NetworkTab";
 import { Message } from "@/lib/types";
 import {
     MessageSquare, Rss, LogOut, Hash, Users,
 } from "lucide-react";
 import { authService } from "@/services/auth.service";
 
-type ActiveTab = "chat" | "feed";
+type ActiveTab = "chat" | "feed" | "network";
 
 /** Map backend ChannelMessage shape → frontend Message shape */
 function mapMessage(raw: ChannelMessage, currentUserId: string, currentUsername: string): Message {
@@ -114,6 +115,7 @@ export default function ChatPageComponent() {
     const navItems: { id: ActiveTab; icon: React.ReactNode; label: string }[] = [
         { id: "chat", icon: <MessageSquare className="h-5 w-5" />, label: "General Chat" },
         { id: "feed", icon: <Rss className="h-5 w-5" />, label: "Social Feed" },
+        { id: "network", icon: <Users className="h-5 w-5" />, label: "Network" },
     ];
 
     // Group consecutive messages from same sender
@@ -272,6 +274,13 @@ export default function ChatPageComponent() {
                                 <PostFeed />
                             </div>
                         </ScrollArea>
+                    </div>
+                )}
+
+                {/* ── NETWORK TAB ────────────────────────────────── */}
+                {activeTab === "network" && (
+                    <div className="flex-1 overflow-hidden">
+                        <NetworkTab />
                     </div>
                 )}
             </div>
