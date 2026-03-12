@@ -1,1 +1,0 @@
-//define all auth calls go to port 8080 because the auth microservice runs on that port
