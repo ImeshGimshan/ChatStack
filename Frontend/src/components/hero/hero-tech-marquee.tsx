@@ -4,10 +4,10 @@ const techStack = ["React", "Next.js", "Redis", "PostgreSQL", "MongoDB", "Rabbit
 
 function StackLogo({ name }: { name: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-white/40">
+    <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-white/40 sm:gap-2 sm:px-4 sm:py-2 sm:text-xs sm:tracking-[0.18em]">
       <svg
         viewBox="0 0 24 24"
-        className="h-4 w-4"
+        className="h-3.5 w-3.5 sm:h-4 sm:w-4"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
@@ -24,11 +24,11 @@ function StackLogo({ name }: { name: string }) {
 export function HeroTechMarquee() {
   return (
     <motion.div
-      className="absolute bottom-6 left-0 right-0 z-10 overflow-hidden"
+      className="absolute bottom-4 left-0 right-0 z-10 hidden overflow-hidden sm:block md:bottom-6"
       animate={{ x: ["0%", "-4%", "0%"] }}
       transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
     >
-      <div className="mx-auto flex w-max items-center gap-3 px-6">
+      <div className="mx-auto flex w-max items-center gap-2 px-4 sm:gap-3 sm:px-6">
         {[...techStack, ...techStack].map((name, index) => (
           <StackLogo key={`${name}-${index}`} name={name} />
         ))}

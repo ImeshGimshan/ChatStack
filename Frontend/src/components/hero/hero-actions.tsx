@@ -17,7 +17,7 @@ export function HeroActions() {
         className="rounded-full"
       >
         <Button className="h-12 rounded-full border border-indigo-300/35 bg-linear-to-r from-indigo-500 via-indigo-600 to-blue-500 px-9 text-base font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 hover:from-indigo-400 hover:via-indigo-500 hover:to-blue-400 hover:shadow-[0_0_16px_rgba(99,102,241,0.5)]">
-          Deploy Your Stack
+          Get Started
         </Button>
       </motion.div>
 
@@ -25,7 +25,7 @@ export function HeroActions() {
         variant="outline"
         className="h-12 border-white/60 bg-white/5 px-8 text-base text-white backdrop-blur-md hover:bg-white/10 hover:text-white"
       >
-        View System Architecture
+        How it Works
       </Button>
     </div>
   );
