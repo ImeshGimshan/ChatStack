@@ -107,6 +107,28 @@ export class ServerService {
     });
   }
 
+  async joinServer(serverId: bigint, userId: bigint) {
+    await this.prisma.user.upsert({
+      where: { id: userId },
+      update: {},
+      create: { id: userId },
+    });
+
+    return this.prisma.serverMember.upsert({
+      where: {
+        serverId_userId: {
+          serverId,
+          userId,
+        },
+      },
+      update: {},
+      create: {
+        serverId,
+        userId,
+      },
+    });
+  }
+
   async removeMember(serverId: bigint, userId: bigint) {
     return this.prisma.serverMember.delete({
       where: {

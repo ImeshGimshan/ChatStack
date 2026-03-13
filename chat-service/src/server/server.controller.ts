@@ -63,6 +63,16 @@ export class ServerController {
     return this.serverService.getChannels(BigInt(id));
   }
 
+  @Post(':id/join')
+  async joinServer(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new Error('Authenticated userId is required');
+    }
+
+    return this.serverService.joinServer(BigInt(id), BigInt(userId));
+  }
+
   @Get(':id/members')
   async getMembers(@Param('id', ParseIntPipe) id: number) {
     return this.serverService.getMembers(BigInt(id));

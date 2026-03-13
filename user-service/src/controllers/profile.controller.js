@@ -7,11 +7,14 @@ const AUTH_SERVICE_URL =
 //fwtch user details from auth service
 async function fetchUserFromAuthService(userId, token) {
   try {
-    const response = await axios.get(`${AUTH_SERVICE_URL}/api/auth/me`, {
+    const response = await axios.get(
+      `${AUTH_SERVICE_URL}/api/internal/users/${userId}`,
+      {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    });
+      },
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching user from Auth Service:", error.message);
