@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Poppins, Tektur } from "next/font/google";
+import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -35,7 +36,7 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${montserrat.variable} ${tektur.variable} antialiased font-normal-text`}
       >
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

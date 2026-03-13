@@ -32,7 +32,7 @@ const fadeInUp = {
 
 export function ChatStackHero() {
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-[#0A0A0B] text-white">
+    <section className="relative min-h-svh w-full overflow-hidden bg-[#0A0A0B] text-white">
       <div className="pointer-events-none absolute inset-0 z-0">
         <DarkVeil
           hueShift={0}
@@ -49,12 +49,12 @@ export function ChatStackHero() {
 
       <HeroNavbar />
 
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-6xl flex-col items-center justify-center px-6 pt-24 text-center">
+      <div className="relative z-10 mx-auto flex min-h-svh w-full max-w-6xl flex-col items-center justify-center px-4 pb-20 pt-24 text-center sm:px-6 sm:pt-28 md:pb-24 md:pt-32">
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="show"
-          className="space-y-8"
+          className="space-y-6 sm:space-y-8"
         >
           <motion.div variants={fadeInUp}>
             <HeroBadges />
@@ -62,14 +62,13 @@ export function ChatStackHero() {
 
           <motion.h1
             variants={fadeInUp}
-            className="font-special mx-auto max-w-5xl text-5xl font-semibold tracking-[-0.04em] text-white sm:text-6xl lg:text-[80px] lg:leading-[1.02]"
+            className="font-special mx-auto max-w-5xl text-4xl font-semibold tracking-[-0.03em] text-white leading-tight sm:text-5xl md:text-6xl lg:text-[80px] lg:leading-[1.02]"
           >
-            Enterprise-Grade Chat, Built for the Edge.
+            Conversations moving at the <span className="text-indigo-400 drop-shadow-electric-glow">speed of thought.</span>
           </motion.h1>
 
-          <motion.p variants={fadeInUp} className="mx-auto max-w-2xl text-base leading-relaxed text-zinc-300 sm:text-lg">
-            A highly scalable, 6-service architecture delivering instant messaging, social
-            connections, and real-time presence. Built for developers who demand performance.
+          <motion.p variants={fadeInUp} className="mx-auto max-w-2xl px-2 text-sm leading-relaxed text-zinc-300 sm:px-0 sm:text-base md:text-lg">
+            A high-performance chat platform built for modern communities. Instant delivery, real-time presence, and zero compromises.
           </motion.p>
 
           <motion.div variants={fadeInUp}>

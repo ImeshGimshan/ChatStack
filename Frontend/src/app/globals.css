@@ -131,6 +131,18 @@
 }
 
 @layer utilities {
+  .font-poppins {
+    font-family: var(--font-poppins), sans-serif;
+  }
+
+  .font-montserrat {
+    font-family: var(--font-montserrat), sans-serif;
+  }
+
+  .font-tektur {
+    font-family: var(--font-tektur), sans-serif;
+  }
+
   .font-normal-text {
     font-family: var(--font-poppins), sans-serif;
   }
