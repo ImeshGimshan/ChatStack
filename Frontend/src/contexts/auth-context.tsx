@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 
 import {
   AuthUser,
@@ -23,22 +23,12 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<AuthStatus>("loading");
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<AuthUser | null>(null);
-
-  useEffect(() => {
-    const session = readPersistedAuthSession();
-
-    if (session.token && session.user) {
-      setToken(session.token);
-      setUser(session.user);
-      setStatus("authenticated");
-      return;
-    }
-
-    setStatus("unauthenticated");
-  }, []);
+  const [initialSession] = useState(() => readPersistedAuthSession());
+  const [status, setStatus] = useState<AuthStatus>(
+    initialSession.token && initialSession.user ? "authenticated" : "unauthenticated"
+  );
+  const [token, setToken] = useState<string | null>(initialSession.token);
+  const [user, setUser] = useState<AuthUser | null>(initialSession.user);
 
   function setSession(nextToken: string, nextUser: AuthUser) {
     persistAuthSession(nextToken, nextUser);
@@ -63,17 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("unauthenticated");
   }
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      status,
-      token,
-      user,
-      setSession,
-      updateUser,
-      logout
-    }),
-    [status, token, user]
-  );
+  const value: AuthContextValue = {
+    status,
+    token,
+    user,
+    setSession,
+    updateUser,
+    logout
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
