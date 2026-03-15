@@ -99,6 +99,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       username,
       timestamp: new Date(),
     });
+
+    const onlineUserKeys = await this.redis.keys('user-online:*');
+    const onlineUserIds = onlineUserKeys
+      .map((key) => key.replace('user-online:', '').trim())
+      .filter(Boolean);
+
+    client.emit('online-users-snapshot', {
+      userIds: Array.from(new Set(onlineUserIds)),
+      timestamp: new Date(),
+    });
   }
 
   async handleDisconnect(client: Socket) {
@@ -106,7 +116,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const username = client.data.user?.username;
 
     if (userId) {
-      await this.redis.del(`user-online: ${userId}`);
+      await this.redis.del(`user-online:${userId}`);
       console.log(`Client disconnected: ${client.id} (User: ${username})`);
 
       this.server.emit('user-offline', {

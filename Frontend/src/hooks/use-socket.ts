@@ -17,18 +17,20 @@ type UseSocketResult = {
 
 export function useSocket(token: string | null): UseSocketResult {
   const socketRef = useRef<Socket | null>(null);
-  const [status, setStatus] = useState<SocketStatus>("idle");
+  const [socketState, setSocketState] = useState<Socket | null>(null);
+  const [status, setStatus] = useState<SocketStatus>(token ? "connecting" : "idle");
   const [lastError, setLastError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) {
-      setStatus("idle");
-      setLastError(null);
-
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
+
+      setSocketState(null);
+      setStatus("idle");
+      setLastError(null);
 
       return;
     }
@@ -40,7 +42,7 @@ export function useSocket(token: string | null): UseSocketResult {
       auth: {
         token
       },
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 10,
@@ -48,6 +50,7 @@ export function useSocket(token: string | null): UseSocketResult {
     });
 
     socketRef.current = socket;
+    setSocketState(socket);
 
     const onConnect = () => {
       setStatus("connected");
@@ -91,13 +94,17 @@ export function useSocket(token: string | null): UseSocketResult {
     };
   }, [token]);
 
+  const effectiveStatus: SocketStatus = token ? status : "idle";
+  const effectiveError: string | null = token ? lastError : null;
+  const effectiveSocket: Socket | null = token ? socketState : null;
+
   return useMemo(
     () => ({
-      socket: socketRef.current,
-      status,
-      isConnected: status === "connected",
-      lastError
+      socket: effectiveSocket,
+      status: effectiveStatus,
+      isConnected: effectiveStatus === "connected",
+      lastError: effectiveError
     }),
-    [status, lastError]
+    [effectiveSocket, effectiveStatus, effectiveError]
   );
 }

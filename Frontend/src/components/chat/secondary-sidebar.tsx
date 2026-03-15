@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 type ChannelItem = {
   id: string;
   name: string;
+  unreadCount?: number;
 };
 
 type ServerItem = {
@@ -17,11 +18,12 @@ type ServerItem = {
   name: string;
 };
 
-const recentDms = [
-  { id: "1", name: "Ayesha", status: "online" },
-  { id: "2", name: "Rohan", status: "idle" },
-  { id: "3", name: "Mira", status: "online" }
-];
+type ConversationItem = {
+  id: string;
+  name: string;
+  unreadCount?: number;
+  isOnline?: boolean;
+};
 
 type SecondarySidebarProps = {
   mode: "global" | "personal";
@@ -35,6 +37,11 @@ type SecondarySidebarProps = {
   channels: ChannelItem[];
   activeChannelId: string | null;
   onSelectChannel: (channelId: string) => void;
+  conversations: ConversationItem[];
+  activeConversationId: string | null;
+  onSelectConversation: (conversationId: string) => void;
+  onCreateConversation: () => Promise<void>;
+  onCreateConversationByUsername: (username: string) => Promise<void>;
   onCreateChannel: (name: string) => Promise<void>;
   onDeleteChannel: (channelId: string) => Promise<void>;
 };
@@ -51,6 +58,11 @@ export function SecondarySidebar({
   channels,
   activeChannelId,
   onSelectChannel,
+  conversations,
+  activeConversationId,
+  onSelectConversation,
+  onCreateConversation,
+  onCreateConversationByUsername,
   onCreateChannel,
   onDeleteChannel
 }: SecondarySidebarProps) {
@@ -59,6 +71,9 @@ export function SecondarySidebar({
   const [searchResult, setSearchResult] = useState<ServerItem | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [dmSearchUsername, setDmSearchUsername] = useState("");
+  const [dmSearchError, setDmSearchError] = useState<string | null>(null);
+  const [isCreatingDm, setIsCreatingDm] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
   const [newChannelName, setNewChannelName] = useState("");
@@ -148,6 +163,27 @@ export function SecondarySidebar({
       setCreateChannelError(message);
     } finally {
       setIsCreatingChannel(false);
+    }
+  }
+
+  async function handleCreateDmByUsername() {
+    const query = dmSearchUsername.trim();
+    if (!query) {
+      setDmSearchError("Enter a username.");
+      return;
+    }
+
+    setDmSearchError(null);
+    setIsCreatingDm(true);
+
+    try {
+      await onCreateConversationByUsername(query);
+      setDmSearchUsername("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to start DM.";
+      setDmSearchError(message);
+    } finally {
+      setIsCreatingDm(false);
     }
   }
 
@@ -323,6 +359,11 @@ export function SecondarySidebar({
                   >
                     <Hash className="size-4" />
                     <span className="min-w-0 flex-1 truncate">#{normalizedChannelName}</span>
+                    {channel.unreadCount && channel.unreadCount > 0 ? (
+                      <span className="ml-1 shrink-0 rounded-full bg-red-500/80 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        {channel.unreadCount}
+                      </span>
+                    ) : null}
                     <Button
                       type="button"
                       variant="ghost"
@@ -348,11 +389,38 @@ export function SecondarySidebar({
           </div>
         ) : (
           <div>
+            <div className="mb-3 rounded-lg border border-white/10 bg-black/45 p-2">
+              <p className="px-1 pb-2 font-montserrat text-xs tracking-wide text-zinc-400">START DM</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={dmSearchUsername}
+                  onChange={(event) => setDmSearchUsername(event.target.value)}
+                  placeholder="Search by username"
+                  className="h-8 w-full rounded-lg border border-white/10 bg-black/45 px-2 font-poppins text-xs text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-indigo-300/70"
+                />
+                <Button
+                  variant="ghost"
+                  onClick={handleCreateDmByUsername}
+                  disabled={isCreatingDm}
+                  className="h-8 rounded-lg border border-white/10 bg-black/45 px-2 font-montserrat text-xs text-zinc-200 hover:bg-white/10"
+                >
+                  {isCreatingDm ? "..." : "Start"}
+                </Button>
+              </div>
+              {dmSearchError ? (
+                <p className="mt-2 font-montserrat text-[11px] text-red-300">{dmSearchError}</p>
+              ) : null}
+            </div>
+
             <div className="mb-2 flex items-center justify-between px-2">
               <span className="font-montserrat text-xs tracking-wide text-zinc-400">RECENT</span>
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => {
+                  void onCreateConversation();
+                }}
                 className="size-6 rounded-md text-zinc-400 transition-all duration-300 ease-in-out hover:bg-white/10 hover:text-white"
                 aria-label="Start New DM"
               >
@@ -360,10 +428,15 @@ export function SecondarySidebar({
               </Button>
             </div>
             <ul className="space-y-1">
-              {recentDms.map((dm) => (
+              {conversations.map((dm) => (
                 <li
                   key={dm.id}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-300 ease-in-out hover:bg-white/5"
+                  onClick={() => onSelectConversation(dm.id)}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 transition-all duration-300 ease-in-out ${
+                    dm.id === activeConversationId
+                      ? "border border-cyan-300/40 bg-cyan-500/12"
+                      : "hover:bg-white/5"
+                  }`}
                 >
                   <div className="relative">
                     <Avatar className="size-8 border border-white/10">
@@ -373,17 +446,28 @@ export function SecondarySidebar({
                       </AvatarFallback>
                     </Avatar>
                     <span
-                      className={`absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border border-black ${
-                        dm.status === "online" ? "bg-emerald-400" : "bg-amber-400"
+                      className={`absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full border border-black/80 ${
+                        dm.isOnline ? "bg-emerald-400" : "bg-zinc-500"
                       }`}
+                      title={dm.isOnline ? "Online" : "Offline"}
                     />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate font-poppins text-sm text-zinc-100">{dm.name}</p>
-                    <p className="font-montserrat text-[11px] text-zinc-400">{dm.status}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-montserrat text-[11px] text-zinc-400">
+                        {dm.unreadCount && dm.unreadCount > 0 ? `${dm.unreadCount} unread` : "Open"}
+                      </p>
+                      <span className="font-montserrat text-[11px] text-zinc-500">
+                        {dm.isOnline ? "Online" : "Offline"}
+                      </span>
+                    </div>
                   </div>
                 </li>
               ))}
+              {conversations.length === 0 ? (
+                <li className="rounded-lg px-3 py-2 font-montserrat text-xs text-zinc-500">No conversations yet.</li>
+              ) : null}
             </ul>
           </div>
         )}
