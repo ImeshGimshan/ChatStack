@@ -21,18 +21,49 @@ export class PostService {
         content: createPostDto.content,
         imageUrl: createPostDto.imageId,
         authorId: BigInt(userIdFromToken),
-        serverId: BigInt(createPostDto.serverId),
+        serverId: createPostDto.serverId ? BigInt(createPostDto.serverId) : null,
         title: createPostDto.title,
       },
     });
   }
 
-  async getFeed() {
-    // Get all posts
+  async getFeed(currentUserId?: string) {
+    let authorIdFilter: bigint[] = [];
+
+    if (currentUserId) {
+      const bUserId = BigInt(currentUserId);
+      authorIdFilter = [bUserId];
+      try {
+        const socialServiceUrl = process.env.SOCIAL_SERVICE_URL || 'http://localhost:3334';
+        const response = await fetch(`${socialServiceUrl}/connection/user/${currentUserId}`);
+        if (response.ok) {
+          const connections = await response.json();
+          const connectionIds = connections.map((conn: any) =>
+            conn.requesterId === Number(currentUserId) ? BigInt(conn.addresseeId) : BigInt(conn.requesterId),
+          );
+          authorIdFilter = [bUserId, ...connectionIds];
+        } else {
+          console.warn('Failed to fetch connections from social-service, status:', response.status);
+        }
+      } catch (err) {
+        console.error('Failed to fetch connections from social-service', err);
+      }
+    }
+
+    // Get posts
     const posts = await this.prisma.post.findMany({
+      where: authorIdFilter.length > 0 ? {
+        authorId: { in: authorIdFilter }
+      } : {},
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        comments: {
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+        }
+      }
     });
 
     if (posts.length === 0) return [];
@@ -46,21 +77,20 @@ export class PostService {
       const users = await this.authService.getUsersByIds(authorIds);
       userMap = new Map(users.map((user) => [user.id, user]));
     } catch {
-      // Auth service unreachable — posts will show authorId as display name
+      // Auth service unreachable
     }
 
-    // Merge posts with author data (author may be null if auth-service is down)
+    // Merge posts with author data
     return posts.map((post) => ({
-      id: Number(post.id),
-      title: post.title,
-      content: post.content,
-      imageUrl: post.imageUrl,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
+      ...post,
+      id: post.id.toString(),
       authorId: post.authorId.toString(),
-      author: userMap.get(Number(post.authorId)) ?? null,
+      serverId: post.serverId?.toString(),
+      author: userMap.get(Number(post.authorId)) ?? {
+        id: post.authorId.toString(),
+        username: `user-${post.authorId}`,
+      },
     }));
-
   }
 
   async updatePost(

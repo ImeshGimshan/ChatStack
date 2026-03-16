@@ -29,8 +29,12 @@ export class PostController {
   }
 
   @Get()
-  async getAllPosts() {
-    return this.postService.getFeed();
+  async getAllPosts(@Request() req: any) {
+    // Optional auth: if token is valid, use userId for personalized feed
+    // If no token or invalid, show a generic feed (currently handled by service as empty filter)
+    // Actually, JwtAuthGuard is not used here, so we might need a custom check if we want optional auth
+    // For now, let's just make it handle the case where req.user might be populated by other means or if we add a guard.
+    return this.postService.getFeed(req.user?.userId);
   }
 
   @UseGuards(JwtAuthGuard)

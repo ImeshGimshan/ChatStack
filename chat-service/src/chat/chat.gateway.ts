@@ -81,6 +81,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     client.join(`user-${userId}`);
+
+    // Auto-join all relevant rooms for the user to support global notifications/unread counts
+    const bUserId = BigInt(userId);
+    try {
+      const [channels, conversations] = await Promise.all([
+        this.channelService.getMyChannels(bUserId),
+        this.conversationService.getConversationsForUser(bUserId),
+      ]);
+
+      channels.forEach((channel) => {
+        client.join(`channel-${channel.id}`);
+      });
+
+      conversations.forEach((conv) => {
+        client.join(`conversation-${conv.id}`);
+      });
+
+      console.log(`User ${userId} auto-joined ${channels.length} channels and ${conversations.length} conversations`);
+    } catch (error) {
+      console.error('Error auto-joining rooms for user:', userId, error);
+    }
+
     console.log(`Client connected: ${client.id} (User ID: ${userId})`);
 
     await this.redis.setex(
