@@ -138,4 +138,51 @@ export class ConversationController {
       BigInt(requesterId),
     );
   }
+
+  @Post(':conversationId/messages/:messageId/reactions')
+  @ApiOperation({ summary: 'Add a reaction to a conversation message' })
+  async addReaction(
+    @Param('conversationId', ParseIntPipe) conversationId: number,
+    @Param('messageId', ParseIntPipe) messageId: number,
+    @Body('emoji') emoji: string,
+    @Req() req: any,
+  ) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new BadRequestException('Authenticated userId is required');
+    }
+    return this.conversationService.addReaction(
+      BigInt(messageId),
+      BigInt(userId),
+      emoji,
+    );
+  }
+
+  @Delete(':conversationId/messages/:messageId/reactions')
+  @ApiOperation({ summary: 'Remove a reaction from a conversation message' })
+  async removeReaction(
+    @Param('conversationId', ParseIntPipe) conversationId: number,
+    @Param('messageId', ParseIntPipe) messageId: number,
+    @Body('emoji') emoji: string,
+    @Req() req: any,
+  ) {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new BadRequestException('Authenticated userId is required');
+    }
+    return this.conversationService.removeReaction(
+      BigInt(messageId),
+      BigInt(userId),
+      emoji,
+    );
+  }
+
+  @Get(':conversationId/messages/:messageId/reactions')
+  @ApiOperation({ summary: 'Get reactions for a conversation message' })
+  async getReactions(
+    @Param('conversationId', ParseIntPipe) conversationId: number,
+    @Param('messageId', ParseIntPipe) messageId: number,
+  ) {
+    return this.conversationService.listReactions(BigInt(messageId));
+  }
 }
