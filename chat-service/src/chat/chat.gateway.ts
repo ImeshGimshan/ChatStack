@@ -485,4 +485,97 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Failed to mark message as read' });
     }
   }
+
+  // reactions
+  @SubscribeMessage('add-channel-reaction')
+  async handleAddChannelReaction(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { channelId: string; messageId: string; emoji: string }
+  ) {
+    const userId = client.data.user.sub;
+    try {
+      await this.channelService.addReaction(
+        BigInt(payload.messageId),
+        BigInt(userId),
+        payload.emoji,
+      );
+      this.server.to(`channel-${payload.channelId}`).emit('channel-reaction-added', {
+        messageId: payload.messageId,
+        channelId: payload.channelId,
+        userId,
+        emoji: payload.emoji,
+      });
+    } catch (error) {
+      client.emit('error', { message: 'Failed to add reaction' });
+    }
+  }
+
+  @SubscribeMessage('remove-channel-reaction')
+  async handleRemoveChannelReaction(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { channelId: string; messageId: string; emoji: string }
+  ) {
+    const userId = client.data.user.sub;
+    try {
+      await this.channelService.removeReaction(
+        BigInt(payload.messageId),
+        BigInt(userId),
+        payload.emoji,
+      );
+      this.server.to(`channel-${payload.channelId}`).emit('channel-reaction-removed', {
+        messageId: payload.messageId,
+        channelId: payload.channelId,
+        userId,
+        emoji: payload.emoji,
+      });
+    } catch (error) {
+      client.emit('error', { message: 'Failed to remove reaction' });
+    }
+  }
+
+  @SubscribeMessage('add-conversation-reaction')
+  async handleAddConversationReaction(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { conversationId: string; messageId: string; emoji: string }
+  ) {
+    const userId = client.data.user.sub;
+    try {
+      await this.conversationService.addReaction(
+        BigInt(payload.messageId),
+        BigInt(userId),
+        payload.emoji,
+      );
+      this.server.to(`conversation-${payload.conversationId}`).emit('conversation-reaction-added', {
+        messageId: payload.messageId,
+        conversationId: payload.conversationId,
+        userId,
+        emoji: payload.emoji,
+      });
+    } catch (error) {
+      client.emit('error', { message: 'Failed to add reaction' });
+    }
+  }
+
+  @SubscribeMessage('remove-conversation-reaction')
+  async handleRemoveConversationReaction(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { conversationId: string; messageId: string; emoji: string }
+  ) {
+    const userId = client.data.user.sub;
+    try {
+      await this.conversationService.removeReaction(
+        BigInt(payload.messageId),
+        BigInt(userId),
+        payload.emoji,
+      );
+      this.server.to(`conversation-${payload.conversationId}`).emit('conversation-reaction-removed', {
+        messageId: payload.messageId,
+        conversationId: payload.conversationId,
+        userId,
+        emoji: payload.emoji,
+      });
+    } catch (error) {
+      client.emit('error', { message: 'Failed to remove reaction' });
+    }
+  }
 }

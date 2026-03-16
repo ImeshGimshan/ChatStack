@@ -21,6 +21,7 @@ model User {
   messageReactions                MessageReaction[]
   channelMessageReadReceipts      ChannelMessageReadReceipt[]
   conversationMessageReadReceipts ConversationMessageReadReceipt[]
+  conversationMessageReactions    ConversationMessageReaction[]
   userKey                         UserKey?
   posts                           Post[]                        @relation("PostAuthor")
   comments                        Comment[]                     @relation("CommentAuthor")
@@ -238,6 +239,7 @@ model ConversationMessage {
   sender   User   @relation("ConversationMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   readReceipts ConversationMessageReadReceipt[]
+  reactions    ConversationMessageReaction[]
 
   @@index([conversationId])
   @@index([senderId])
@@ -258,6 +260,23 @@ model ConversationMessageReadReceipt {
   @@index([userId])
   @@index([messageId])
   @@map("conversation_message_read_receipts")
+}
+
+model ConversationMessageReaction {
+  id      BigInt   @id @default(autoincrement())
+  emoji   String
+  addedAt DateTime @default(now())
+
+  conversationMessageId BigInt
+  message               ConversationMessage @relation(fields: [conversationMessageId], references: [id], onDelete: Cascade)
+
+  userId BigInt
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationMessageId, emoji])
+  @@index([conversationMessageId])
+  @@index([userId])
+  @@map("conversation_message_reactions")
 }
 
 // ─────────────────────────────────────────────

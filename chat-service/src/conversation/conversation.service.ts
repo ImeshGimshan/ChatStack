@@ -118,4 +118,35 @@ export class ConversationService {
       },
     });
   }
+
+  async addReaction(messageId: bigint, userId: bigint, emoji: string) {
+    return this.prisma.conversationMessageReaction.create({
+      data: {
+        conversationMessageId: messageId,
+        userId,
+        emoji,
+      },
+    });
+  }
+
+  async removeReaction(messageId: bigint, userId: bigint, emoji: string) {
+    return this.prisma.conversationMessageReaction.delete({
+      where: {
+        userId_conversationMessageId_emoji: {
+          conversationMessageId: messageId,
+          userId,
+          emoji,
+        },
+      },
+    });
+  }
+
+  async listReactions(messageId: bigint) {
+    return this.prisma.conversationMessageReaction.findMany({
+      where: { conversationMessageId: messageId },
+      include: {
+        user: true,
+      },
+    });
+  }
 }
