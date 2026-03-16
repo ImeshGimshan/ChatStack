@@ -53,35 +53,47 @@ export class ConnectionService {
     });
   }
 
-  async acceptRequest(currentUserId: number, connectionId: number) {
-    const conn = await this.findPendingForAddressee(
-      currentUserId,
-      connectionId,
-    );
+  async acceptRequest(currentUserId: number, targetUserId: number) {
+    const conn = await this.prisma.connection.findFirst({
+      where: {
+        requesterId: targetUserId,
+        addresseeId: currentUserId,
+        status: ConnectionStatus.PENDING,
+      },
+    });
+    if (!conn) throw new NotFoundException('Pending request not found');
     return this.prisma.connection.update({
-      where: { id: connectionId },
+      where: { id: conn.id },
       data: { status: ConnectionStatus.ACCEPTED },
     });
   }
 
-  async rejectRequest(currentUserId: number, connectionId: number) {
-    await this.findPendingForAddressee(currentUserId, connectionId);
+  async rejectRequest(currentUserId: number, targetUserId: number) {
+    const conn = await this.prisma.connection.findFirst({
+      where: {
+        requesterId: targetUserId,
+        addresseeId: currentUserId,
+        status: ConnectionStatus.PENDING,
+      },
+    });
+    if (!conn) throw new NotFoundException('Pending request not found');
     return this.prisma.connection.update({
-      where: { id: connectionId },
+      where: { id: conn.id },
       data: { status: ConnectionStatus.REJECTED },
     });
   }
 
-  async withdrawRequest(currentUserId: number, connectionId: number) {
-    const conn = await this.prisma.connection.findUnique({
-      where: { id: connectionId },
+  async withdrawRequest(currentUserId: number, targetUserId: number) {
+    const conn = await this.prisma.connection.findFirst({
+      where: {
+        requesterId: currentUserId,
+        addresseeId: targetUserId,
+        status: ConnectionStatus.PENDING,
+      },
     });
-    if (!conn || conn.requesterId !== currentUserId)
-      throw new ForbiddenException('Not your request');
-    if (conn.status !== 'PENDING')
-      throw new BadRequestException('Can only withdraw pending requests');
+    if (!conn) throw new NotFoundException('Pending request not found');
     return this.prisma.connection.update({
-      where: { id: connectionId },
+      where: { id: conn.id },
       data: { status: ConnectionStatus.WITHDRAWN },
     });
   }
@@ -143,16 +155,17 @@ export class ConnectionService {
   }
 
   // Remove an accepted connection
-  async removeConnection(currentUserId: number, connectionId: number) {
-    const conn = await this.prisma.connection.findUnique({
-      where: { id: connectionId },
+  async removeConnection(currentUserId: number, targetUserId: number) {
+    const conn = await this.prisma.connection.findFirst({
+      where: {
+        OR: [
+          { requesterId: currentUserId, addresseeId: targetUserId },
+          { requesterId: targetUserId, addresseeId: currentUserId },
+        ],
+      },
     });
     if (!conn) throw new NotFoundException('Connection not found');
-    if (conn.requesterId !== currentUserId && conn.addresseeId !== currentUserId)
-      throw new ForbiddenException('Not your connection');
-    if (conn.status !== 'ACCEPTED')
-      throw new BadRequestException('Connection is not active');
-    await this.prisma.connection.delete({ where: { id: connectionId } });
+    await this.prisma.connection.delete({ where: { id: conn.id } });
     return { message: 'Connection removed' };
   }
 
@@ -234,7 +247,12 @@ export class ConnectionService {
         ],
       },
     });
-    return { status: conn?.status ?? 'NONE' };
+    if (!conn) return { status: 'NONE' };
+    if (conn.status === ConnectionStatus.ACCEPTED) return { status: 'CONNECTED' };
+    if (conn.status === ConnectionStatus.PENDING) {
+      return { status: conn.requesterId === currentUserId ? 'OUTGOING_PENDING' : 'INCOMING_PENDING' };
+    }
+    return { status: conn.status };
   }
 
   // People You May Know — users connected to my connections but not yet connected to me
