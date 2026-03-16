@@ -58,13 +58,13 @@ exports.getMyProfile = async (req, res) => {
       bio: profile.bio,
       avatarUrl: profile.avatarUrl,
       headline: profile.headline,
-      skills: profile.skills,
+      skills: profile.skills || [],
       openToWork: profile.openToWork,
       githubUsername: profile.githubUsername,
-      experience: profile.experience,
-      education: profile.education,
-      address: profile.address,
-      socialLinks: profile.socialLinks,
+      experience: profile.experience || [],
+      education: profile.education || [],
+      address: profile.address || {},
+      socialLinks: profile.socialLinks || {},
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };
@@ -138,8 +138,11 @@ exports.updateMyProfile = async (req, res) => {
       email: authUser?.email || "",
       bio: profile.bio,
       avatarUrl: profile.avatarUrl,
-      address: profile.address,
-      socialLinks: profile.socialLinks,
+      headline: profile.headline,
+      skills: profile.skills || [],
+      githubUsername: profile.githubUsername,
+      address: profile.address || {},
+      socialLinks: profile.socialLinks || {},
       updatedAt: profile.updatedAt,
     };
 
@@ -171,31 +174,44 @@ exports.getProfileByUserId = async (req, res) => {
     const requestToken = req.headers.authorization?.split(" ")[1];
 
     // Find profile in MongoDB
-    const profile = await Profile.findOne({
-      userId: parseInt(userId),
+    let profile = await Profile.findOne({
+      userId: String(userId),
     }).lean();
 
+    // If profile doesn't exist, try to fetch from Auth Service to see if user exists
+    // and auto-create a basic profile.
     if (!profile) {
-      return res.status(404).json({
-        error: "Not Found",
-        message: "Profile not found",
-      });
+      console.log(`🔍 Profile missing for ${userId}, checking Auth Service...`);
+      const authUser = await fetchUserFromAuthService(userId, requestToken);
+      
+      if (authUser) {
+        console.log(`📝 Auto-creating profile for discoverable user ${userId}`);
+        profile = await Profile.create({ 
+          userId: String(userId),
+          username: authUser.username 
+        });
+        profile = profile.toObject();
+      } else {
+        return res.status(404).json({
+          error: "Not Found",
+          message: "Profile not found",
+        });
+      }
     }
 
-    const authUser = await fetchUserFromAuthService(
-      parseInt(userId),
-      requestToken,
-    );
+    const authUser = await fetchUserFromAuthService(userId, requestToken);
 
     // Return complete profile
     const completeProfile = {
       userId: profile.userId,
-      username: authUser?.username || `user_${userId}`,
+      username: authUser?.username || profile.username || `user_${userId}`,
       email: authUser?.email || "",
       bio: profile.bio,
       avatarUrl: profile.avatarUrl,
-      address: profile.address,
-      socialLinks: profile.socialLinks,
+      headline: profile.headline,
+      skills: profile.skills || [],
+      address: profile.address || {},
+      socialLinks: profile.socialLinks || {},
     };
 
     res.json(completeProfile);

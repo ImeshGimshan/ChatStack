@@ -47,7 +47,7 @@ const authenticateToken = (req, res, next) => {
     }
 
     // Attach user info to request object
-    req.userId = parseInt(userId);
+    req.userId = String(userId);
     req.user = decoded;
 
     next();
