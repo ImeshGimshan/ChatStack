@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
-import { Montserrat, Poppins, Tektur } from "next/font/google";
+import { Montserrat, Poppins, Tektur, Inter } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -34,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${poppins.variable} ${montserrat.variable} ${tektur.variable} antialiased font-normal-text`}
+        className={`${inter.variable} ${poppins.variable} ${montserrat.variable} ${tektur.variable} antialiased font-normal-text`}
       >
         <AppProviders>{children}</AppProviders>
       </body>

@@ -27,43 +27,45 @@ export function AuthShell({
   description,
   children,
   footer,
-  stepLabel,
-  currentStep,
-  totalSteps = 3,
-  maxWidthClassName = "max-w-md"
+  maxWidthClassName = "max-w-sm"
 }: AuthShellProps) {
   return (
-    <main className="relative min-h-svh overflow-hidden bg-[#0A0A0B] text-white">
-      <div className={`relative z-10 mx-auto flex min-h-svh w-full ${maxWidthClassName} items-center px-4 py-10 sm:px-6`}>
-        <Card className="w-full rounded-3xl border-white/20 bg-black/45 text-white shadow-[0_20px_60px_rgba(79,70,229,0.24),0_0_18px_rgba(255,255,255,0.08)] backdrop-blur-xl">
-          <CardHeader className="space-y-2 p-6 pb-2 sm:p-8 sm:pb-2">
-            <Link href="/" className="font-special text-lg text-white/90 hover:text-white">
-              ChatStack
-            </Link>
-            {stepLabel ? (
-              <div className="inline-flex w-fit rounded-full border border-indigo-300/40 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-200">
-                {stepLabel}
-              </div>
-            ) : null}
-            {typeof currentStep === "number" ? (
-              <AuthStepProgress currentStep={currentStep} totalSteps={totalSteps} />
-            ) : null}
-            <CardTitle className="font-special text-3xl tracking-tight">{title}</CardTitle>
-            <CardDescription className="text-sm text-zinc-300">{description}</CardDescription>
-          </CardHeader>
+    <div className="flex min-h-svh items-center justify-center bg-background p-4 font-sans">
+      <div
+        className={`w-full ${maxWidthClassName} space-y-6 animate-float-up`}
+      >
+        <div className="text-center space-y-2">
+          <Link href="/" className="inline-flex items-center gap-2 text-xl font-bold text-foreground">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-6 w-6 text-primary"
+            >
+              <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+            </svg>
+            ChatStack
+          </Link>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+          <div className="text-muted-foreground text-sm">{description}</div>
+        </div>
 
-          <CardContent className="space-y-6 p-6 pt-2 sm:p-8 sm:pt-2">
-            {children}
+        <div className="space-y-4">
+          {children}
+        </div>
 
-            {footer ? (
-              <div className="space-y-3">
-                <Separator className="bg-white/10" />
-                {footer}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+        {footer ? (
+          <div className="text-center space-y-2 text-sm">
+            {footer}
+          </div>
+        ) : null}
       </div>
-    </main>
+    </div>
   );
 }

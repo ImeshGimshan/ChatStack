@@ -27,6 +27,7 @@ model User {
   comments                        Comment[]                     @relation("CommentAuthor")
   ownedServers                    Server[]                      @relation("ServerOwner")
 
+
   @@map("users")
 }
 
@@ -290,8 +291,8 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  serverId BigInt
-  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  serverId BigInt?
+  server   Server? @relation(fields: [serverId], references: [id], onDelete: Cascade)
 
   authorId BigInt
   author   User   @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
@@ -345,3 +346,4 @@ model Permission {
 
   @@map("permissions")
 }
+

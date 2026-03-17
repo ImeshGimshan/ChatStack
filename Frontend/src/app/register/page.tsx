@@ -79,91 +79,79 @@ export default function RegisterPage() {
       title="Create your account"
       description="Start with your basic account details."
       footer={
-        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-zinc-300">
-          <span>Already have an account?</span>
-          <Button asChild variant="ghost" className="h-8 rounded-lg px-3 text-sm text-white hover:bg-white/10 hover:text-white">
-            <Link href="/login">Sign in</Link>
-          </Button>
-        </div>
+        <p className="text-muted-foreground">
+          Already have an account?{" "}
+          <Link href="/login" className="text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-5">
-        <div className="space-y-2.5">
-          <Label htmlFor="username" className="text-zinc-200">
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="username" className="text-muted-foreground">
             Username
           </Label>
           <Input
             id="username"
-            type="text"
             value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            autoComplete="username"
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="choose_a_username"
+            className="bg-surface border-border"
             required
-            placeholder="Choose a username"
-            className="h-11 rounded-xl border-white/20 bg-white/5 text-white placeholder:text-zinc-500 focus-visible:border-indigo-300/80 focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400/30"
           />
         </div>
-
-        <div className="space-y-2.5">
-          <Label htmlFor="email" className="text-zinc-200">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-muted-foreground">
             Email
           </Label>
           <Input
             id="email"
             type="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@email.com"
+            className="bg-surface border-border"
             required
-            placeholder="Enter your email"
-            className="h-11 rounded-xl border-white/20 bg-white/5 text-white placeholder:text-zinc-500 focus-visible:border-indigo-300/80 focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400/30"
           />
         </div>
-
-        <div className="space-y-2.5">
-          <Label htmlFor="password" className="text-zinc-200">
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-muted-foreground">
             Password
           </Label>
           <Input
             id="password"
             type="password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="new-password"
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            className="bg-surface border-border"
             required
-            placeholder="Create a password (min 8 chars)"
-            className="h-11 rounded-xl border-white/20 bg-white/5 text-white placeholder:text-zinc-500 focus-visible:border-indigo-300/80 focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400/30"
           />
         </div>
-
-        <div className="space-y-2.5">
-          <Label htmlFor="confirmPassword" className="text-zinc-200">
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword" className="text-muted-foreground">
             Confirm password
           </Label>
           <Input
             id="confirmPassword"
             type="password"
             value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            autoComplete="new-password"
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="••••••••"
+            className="bg-surface border-border"
             required
-            placeholder="Confirm your password"
-            className="h-11 rounded-xl border-white/20 bg-white/5 text-white placeholder:text-zinc-500 focus-visible:border-indigo-300/80 focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400/30"
           />
         </div>
 
         {error ? (
-          <Alert className="border-red-300/30 bg-red-500/10 text-red-100">
+          <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
 
-        <Button
-          type="submit"
-          disabled={!canSubmit}
-          className={`${actionButtonClass} bg-linear-to-r from-indigo-500 via-indigo-600 to-blue-500 text-white hover:from-indigo-400 hover:via-indigo-500 hover:to-blue-400`}
-        >
-          {isSubmitting ? "Creating account..." : "Continue to verification"}
+        <Button type="submit" className="w-full" disabled={!canSubmit}>
+          {isSubmitting ? "Creating account..." : "Create Account"}
         </Button>
       </form>
     </AuthShell>

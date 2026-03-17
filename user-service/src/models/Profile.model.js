@@ -6,7 +6,7 @@ const profileSchema = new mongoose.Schema(
   {
     
     userId: {
-      type: Number,
+      type: String,
       required: true,
       unique: true,
       index: true

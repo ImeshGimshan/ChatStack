@@ -1,5 +1,6 @@
-import { LogOut, Search } from "lucide-react";
+import { LogOut, Search, BookOpen, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
@@ -21,9 +22,13 @@ export function ChatTopBar({ channelName, description }: ChatTopBarProps) {
   return (
     <header className="h-14 border-b border-white/10 bg-black/45 px-4 backdrop-blur-xl">
       <div className="flex h-full items-center justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="truncate font-tektur text-base text-white">#{channelName}</h1>
-          <p className="truncate font-montserrat text-[11px] text-zinc-400">{description}</p>
+        <div className="min-w-0 flex items-center gap-2">
+          <div>
+            <h1 className="truncate font-tektur text-base text-white flex items-center gap-2">
+              #{channelName}
+            </h1>
+            <p className="truncate font-montserrat text-[11px] text-zinc-400">{description}</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -35,6 +40,17 @@ export function ChatTopBar({ channelName, description }: ChatTopBarProps) {
               className="h-9 w-full bg-transparent px-2 font-poppins text-sm text-zinc-200 outline-none placeholder:text-zinc-500"
             />
           </div>
+          <Link href="/feed" passHref>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-9 rounded-lg text-zinc-300 transition-all duration-300 ease-in-out hover:bg-indigo-500/20 hover:text-indigo-100"
+              aria-label="Go to Feed"
+            >
+              <BookOpen className="size-4" />
+            </Button>
+          </Link>
+
           <Button
             variant="ghost"
             size="icon"

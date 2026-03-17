@@ -9,10 +9,10 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePostDto {
-  @ApiProperty({ description: 'The ID of the server' })
+  @ApiProperty({ description: 'The ID of the server', required: false })
   @IsNumberString()
-  @IsNotEmpty()
-  serverId: string;
+  @IsOptional()
+  serverId?: string;
 
   @ApiProperty({ description: 'The content of the post' })
   @IsString()

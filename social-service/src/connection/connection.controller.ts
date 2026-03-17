@@ -24,19 +24,19 @@ export class ConnectionController {
     return await this.service.sendRequest(req.userId, addresseeId, message);
   }
 
-  @Patch(':id/accept')
-  async accept(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
-    return await this.service.acceptRequest(req.userId, id);
+  @Patch(':targetUserId/accept')
+  async accept(@Req() req: any, @Param('targetUserId', ParseIntPipe) targetUserId: number) {
+    return await this.service.acceptRequest(req.userId, targetUserId);
   }
 
-  @Patch(':id/reject')
-  async reject(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
-    return await this.service.rejectRequest(req.userId, id);
+  @Patch(':targetUserId/reject')
+  async reject(@Req() req: any, @Param('targetUserId', ParseIntPipe) targetUserId: number) {
+    return await this.service.rejectRequest(req.userId, targetUserId);
   }
 
-  @Delete(':id/withdraw')
-  async withdraw(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
-    return await this.service.withdrawRequest(req.userId, id);
+  @Delete(':targetUserId/withdraw')
+  async withdraw(@Req() req: any, @Param('targetUserId', ParseIntPipe) targetUserId: number) {
+    return await this.service.withdrawRequest(req.userId, targetUserId);
   }
 
   @Post('block/:targetUserId')
@@ -62,9 +62,9 @@ export class ConnectionController {
     return await this.service.getSentRequests(req.userId);
   }
 
-  @Delete(':id/remove')
-  async remove(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
-    return await this.service.removeConnection(req.userId, id);
+  @Delete(':targetUserId/remove')
+  async remove(@Req() req: any, @Param('targetUserId', ParseIntPipe) targetUserId: number) {
+    return await this.service.removeConnection(req.userId, targetUserId);
   }
 
   @Delete('unblock/:targetUserId')

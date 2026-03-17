@@ -9,6 +9,7 @@ import {
   readPersistedAuthSession
 } from "@/lib/auth-session";
 
+
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 type AuthContextValue = {
@@ -51,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
     setStatus("unauthenticated");
+    
   }
 
   const value: AuthContextValue = {
