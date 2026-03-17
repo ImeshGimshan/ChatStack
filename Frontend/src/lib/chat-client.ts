@@ -976,7 +976,7 @@ export async function deleteComment(token: string, commentId: number | string): 
 
 // SOCIAL CONNECTIONS
 export async function sendConnectionRequest(token: string, receiverId: string): Promise<void> {
-  const response = await fetch(`${SOCIAL_BASE_URL}/connection/request/${receiverId}`, {
+  const response = await fetch(`${SOCIAL_BASE_URL}/api/connection/request/${receiverId}`, {
     method: "POST",
     headers: authJsonHeaders(token)
   });
@@ -984,7 +984,7 @@ export async function sendConnectionRequest(token: string, receiverId: string): 
 }
 
 export async function acceptConnectionRequest(token: string, requesterId: string): Promise<void> {
-  const response = await fetch(`${SOCIAL_BASE_URL}/connection/${requesterId}/accept`, {
+  const response = await fetch(`${SOCIAL_BASE_URL}/api/connection/${requesterId}/accept`, {
     method: "PATCH",
     headers: authJsonHeaders(token)
   });
@@ -992,7 +992,7 @@ export async function acceptConnectionRequest(token: string, requesterId: string
 }
 
 export async function removeConnection(token: string, otherUserId: string): Promise<void> {
-  const response = await fetch(`${SOCIAL_BASE_URL}/connection/${otherUserId}/remove`, {
+  const response = await fetch(`${SOCIAL_BASE_URL}/api/connection/${otherUserId}/remove`, {
     method: "DELETE",
     headers: authJsonHeaders(token)
   });
@@ -1000,7 +1000,7 @@ export async function removeConnection(token: string, otherUserId: string): Prom
 }
 
 export async function getMyConnections(token: string): Promise<ChatUser[]> {
-  const response = await fetch(`${SOCIAL_BASE_URL}/connection/me`, {
+  const response = await fetch(`${SOCIAL_BASE_URL}/api/connection/me`, {
     method: "GET",
     headers: authJsonHeaders(token)
   });
@@ -1033,7 +1033,7 @@ export async function getMyConnections(token: string): Promise<ChatUser[]> {
 }
 
 export async function getPendingRequests(token: string): Promise<ConnectionRequest[]> {
-  const response = await fetch(`${SOCIAL_BASE_URL}/connection/pending`, {
+  const response = await fetch(`${SOCIAL_BASE_URL}/api/connection/pending`, {
     method: "GET",
     headers: authJsonHeaders(token)
   });
@@ -1073,7 +1073,7 @@ export async function getPendingRequests(token: string): Promise<ConnectionReque
 }
 
 export async function getConnectionStatus(token: string, otherUserId: string): Promise<ConnectionStatus> {
-  const response = await fetch(`${SOCIAL_BASE_URL}/connection/status/${otherUserId}`, {
+  const response = await fetch(`${SOCIAL_BASE_URL}/api/connection/status/${otherUserId}`, {
     method: "GET",
     headers: authJsonHeaders(token)
   });

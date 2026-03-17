@@ -8,7 +8,11 @@
     "dev": "nodemon index.js",
     "build": "node --check index.js"
   },
-  "keywords": ["microservices", "profile", "user"],
+  "keywords": [
+    "microservices",
+    "profile",
+    "user"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -17,7 +21,7 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.0.3"
+    "mongoose": "^8.23.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

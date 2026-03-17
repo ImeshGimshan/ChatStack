@@ -24,7 +24,7 @@ async function fetchUserFromAuthService(userId, token) {
 //get current user's profile from userId in token
 exports.getMyProfile = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = String(req.userId);
     const token = req.headers.authorization?.split(" ")[1];
 
     // Find profile in MongoDB
@@ -81,7 +81,7 @@ exports.getMyProfile = async (req, res) => {
 
 exports.updateMyProfile = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = String(req.userId);
     const updates = req.body;
 
     // Only allow these fields to be updated
@@ -226,7 +226,7 @@ exports.getProfileByUserId = async (req, res) => {
 //create profile for current user
 exports.createMyProfile = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = String(req.userId);
     const payload = req.body || {};
 
     // Check if profile already exists
