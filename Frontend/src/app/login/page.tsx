@@ -73,6 +73,8 @@ function LoginPageContent() {
         email: data.email
       });
 
+
+
       const requestedRedirect = searchParams.get("redirect");
       const redirectPath =
         requestedRedirect && requestedRedirect.startsWith("/") && requestedRedirect !== "/"
@@ -90,24 +92,20 @@ function LoginPageContent() {
 
   return (
     <AuthShell
-      title="Welcome back"
-      description="Sign in with your username and password."
+      title="Sign in to your account"
+      description="Enter your credentials to access your chat servers."
       footer={
-        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-zinc-300">
-          <span>No account yet?</span>
-          <Button
-            asChild
-            variant="ghost"
-            className="h-8 rounded-lg px-3 text-sm text-white hover:bg-white/10 hover:text-white"
-          >
-            <Link href="/register">Sign up</Link>
-          </Button>
-        </div>
+        <p className="text-muted-foreground">
+          Don't have an account?{" "}
+          <Link href="/register" className="text-primary hover:underline">
+            Sign up
+          </Link>
+        </p>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-5">
-        <div className="space-y-2.5">
-          <Label htmlFor="username" className="text-zinc-200">
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="username" className="text-muted-foreground">
             Username
           </Label>
           <Input
@@ -117,13 +115,13 @@ function LoginPageContent() {
             onChange={(event) => setUsername(event.target.value)}
             autoComplete="username"
             required
-            placeholder="Enter your username"
-            className="h-11 rounded-xl border-white/20 bg-white/5 text-white placeholder:text-zinc-500 focus-visible:border-indigo-300/80 focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400/30"
+            placeholder="your_username"
+            className="bg-surface border-border"
           />
         </div>
 
-        <div className="space-y-2.5">
-          <Label htmlFor="password" className="text-zinc-200">
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-muted-foreground">
             Password
           </Label>
           <Input
@@ -133,32 +131,26 @@ function LoginPageContent() {
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
             required
-            placeholder="Enter your password"
-            className="h-11 rounded-xl border-white/20 bg-white/5 text-white placeholder:text-zinc-500 focus-visible:border-indigo-300/80 focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400/30"
+            placeholder="••••••••"
+            className="bg-surface border-border"
           />
         </div>
 
         {error ? (
-          <Alert className="border-red-300/30 bg-red-500/10 text-red-100">
+          <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
 
-        <Button
-          type="submit"
-          disabled={!canSubmit}
-          className={`${actionButtonClass} bg-linear-to-r from-indigo-500 via-indigo-600 to-blue-500 text-white hover:from-indigo-400 hover:via-indigo-500 hover:to-blue-400`}
-        >
-          {isSubmitting ? "Signing in..." : "Login"}
+        <Button type="submit" className="w-full" disabled={!canSubmit}>
+          {isSubmitting ? "Signing in..." : "Sign In"}
         </Button>
 
-        <Button
-          type="button"
-          className={`${actionButtonClass} border border-white/20 bg-white/5 text-white hover:bg-white/10`}
-        >
-          <GoogleIcon />
-          <span className="ml-2">Continue with Google</span>
-        </Button>
+        <div className="text-center pt-2">
+          <Link href="/forgot-password" disable-link-formatting="true" className="text-primary hover:underline text-sm">
+            Forgot password?
+          </Link>
+        </div>
       </form>
     </AuthShell>
   );

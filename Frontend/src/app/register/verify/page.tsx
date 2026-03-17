@@ -91,6 +91,8 @@ export default function VerifyOtpPage() {
         email: loginData.email
       });
 
+
+
       sessionStorage.removeItem(PENDING_REGISTRATION_KEY);
       router.push("/register/profile");
     } catch (submitError) {
@@ -126,22 +128,22 @@ export default function VerifyOtpPage() {
     <AuthShell
       title="Verify your email"
       description={
-        <>
-          Enter the OTP sent to <span className="text-zinc-100">{pending?.email ?? "your email"}</span>.
-        </>
+        <p className="text-muted-foreground">
+          Enter the code sent to <span className="text-foreground font-medium">{pending?.email ?? "your email"}</span>
+        </p>
       }
       footer={
-        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-zinc-300">
-          <span>Wrong email?</span>
-          <Button asChild variant="ghost" className="h-8 rounded-lg px-3 text-sm text-white hover:bg-white/10 hover:text-white">
-            <Link href="/register">Edit details</Link>
-          </Button>
-        </div>
+        <p className="text-muted-foreground">
+          Wrong email?{" "}
+          <Link href="/register" className="text-primary hover:underline">
+            Edit details
+          </Link>
+        </p>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-5">
-        <div className="space-y-2.5">
-          <Label htmlFor="code" className="text-zinc-200">
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="code" className="text-muted-foreground">
             Verification code
           </Label>
           <Input
@@ -150,29 +152,26 @@ export default function VerifyOtpPage() {
             value={code}
             onChange={(event) => setCode(event.target.value)}
             required
-            placeholder="Enter OTP code"
-            className="h-11 rounded-xl border-white/20 bg-white/5 text-white placeholder:text-zinc-500 focus-visible:border-indigo-300/80 focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400/30"
+            placeholder="Enter 6-digit code"
+            className="bg-surface border-border tracking-[0.2em] text-center text-lg font-bold"
+            maxLength={6}
           />
         </div>
 
         {error ? (
-          <Alert className="border-red-300/30 bg-red-500/10 text-red-100">
+          <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
 
         {notice ? (
-          <Alert className="border-green-300/30 bg-green-500/10 text-green-100">
+          <Alert className="bg-primary/10 border-primary/20 text-primary">
             <AlertDescription>{notice}</AlertDescription>
           </Alert>
         ) : null}
 
-        <Button
-          type="submit"
-          disabled={!canSubmit}
-          className={`${actionButtonClass} bg-linear-to-r from-indigo-500 via-indigo-600 to-blue-500 text-white hover:from-indigo-400 hover:via-indigo-500 hover:to-blue-400`}
-        >
-          {isSubmitting ? "Verifying..." : "Verify and continue"}
+        <Button type="submit" className="w-full" disabled={!canSubmit}>
+          {isSubmitting ? "Verifying..." : "Verify Account"}
         </Button>
 
         <Button
@@ -180,9 +179,9 @@ export default function VerifyOtpPage() {
           disabled={isResending || pending === null || cooldown > 0}
           variant="outline"
           onClick={onResendOtp}
-          className={`${actionButtonClass} border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white`}
+          className="w-full"
         >
-          {isResending ? "Resending OTP..." : cooldown > 0 ? `Resend Code (${cooldown}s)` : "Resend Code"}
+          {isResending ? "Resending..." : cooldown > 0 ? `Resend Code (${cooldown}s)` : "Resend Code"}
         </Button>
       </form>
     </AuthShell>

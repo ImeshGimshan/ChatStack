@@ -1,4 +1,5 @@
 import { authJsonHeaders, jsonHeaders, parseApiError } from "@/lib/api-client";
+import { getProfileByUserId } from "@/lib/auth-client";
 
 export type ChatServer = {
   id: string;
@@ -23,7 +24,6 @@ export type ChatMessage = {
   channelId: string;
   senderId: string;
   content: string;
-  isEncrypted: boolean;
   createdAt: string;
 };
 
@@ -39,7 +39,6 @@ export type ConversationMessage = {
   conversationId: string;
   senderId: string;
   content: string;
-  isEncrypted: boolean;
   createdAt: string;
 };
 
@@ -62,11 +61,7 @@ export type ChatUnreadSnapshot = {
   conversations: unknown[];
 };
 
-export type PublicKeyRecord = {
-  userId: string;
-  publicKey: string;
-  message?: string;
-};
+
 
 export type FeedPost = {
   id: string;
@@ -74,10 +69,15 @@ export type FeedPost = {
   authorId: string;
   content: string;
   imageId?: string | null;
-  title?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-  author?: unknown | null;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  author?: {
+    profile?: {
+      displayName?: string;
+    }
+  } | null;
+  comments?: FeedComment[];
 };
 
 export type FeedComment = {
@@ -85,9 +85,34 @@ export type FeedComment = {
   postId: string;
   authorId: string;
   content: string;
-  createdAt?: string;
-  updatedAt?: string;
-  author?: unknown | null;
+  createdAt: string;
+  updatedAt: string;
+  author?: {
+    profile?: {
+      displayName?: string;
+    }
+  } | null;
+};
+
+export type ConnectionStatus = "CONNECTED" | "OUTGOING_PENDING" | "INCOMING_PENDING" | "NONE";
+
+export type ChatUser = {
+  id: string;
+  username: string;
+  profile?: {
+    displayName?: string;
+    bio?: string;
+    avatarUrl?: string;
+  };
+};
+
+export type ConnectionRequest = {
+  id: string;
+  requesterId: string;
+  receiverId: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED";
+  createdAt: string;
+  requester?: ChatUser;
 };
 
 type RawServer = {
@@ -108,7 +133,6 @@ type RawMessage = {
   channelId: string | number;
   senderId: string | number;
   content: string;
-  isEncrypted: boolean;
   createdAt: string;
 };
 
@@ -126,11 +150,11 @@ type RawConversationMessage = {
   conversationId: string | number;
   senderId: string | number;
   content: string;
-  isEncrypted: boolean;
   createdAt: string;
 };
 
 const CHAT_BASE_URL = process.env.NEXT_PUBLIC_CHAT_API || "http://localhost:3333";
+const SOCIAL_BASE_URL = process.env.NEXT_PUBLIC_SOCIAL_API || "http://localhost:3334";
 
 function normalizeServer(server: RawServer): ChatServer {
   return {
@@ -155,7 +179,6 @@ function normalizeMessage(message: RawMessage): ChatMessage {
     channelId: String(message.channelId),
     senderId: String(message.senderId),
     content: message.content,
-    isEncrypted: message.isEncrypted,
     createdAt: message.createdAt
   };
 }
@@ -177,7 +200,6 @@ function normalizeConversationMessage(message: RawConversationMessage): Conversa
     conversationId: String(message.conversationId),
     senderId: String(message.senderId),
     content: message.content,
-    isEncrypted: message.isEncrypted,
     createdAt: message.createdAt
   };
 }
@@ -340,7 +362,7 @@ export async function getChannelMessages(
 export async function sendChannelMessage(
   token: string,
   channelId: string,
-  payload: { content: string; isEncrypted?: boolean }
+  payload: { content: string }
 ): Promise<ChatMessage> {
   const response = await fetch(`${CHAT_BASE_URL}/channels/${channelId}/messages`, {
     method: "POST",
@@ -503,7 +525,7 @@ export async function getConversationMessages(
 export async function sendConversationMessage(
   token: string,
   conversationId: string,
-  payload: { content: string; isEncrypted?: boolean }
+  payload: { content: string }
 ): Promise<ConversationMessage> {
   const response = await fetch(`${CHAT_BASE_URL}/conversation/${conversationId}/messages`, {
     method: "POST",
@@ -617,6 +639,69 @@ export async function getChannelReactions(
   }));
 }
 
+export async function addConversationReaction(
+  token: string,
+  conversationId: string,
+  messageId: string,
+  emoji: string
+): Promise<void> {
+  const response = await fetch(`${CHAT_BASE_URL}/conversation/${conversationId}/messages/${messageId}/reactions`, {
+    method: "POST",
+    headers: authJsonHeaders(token),
+    body: JSON.stringify({ emoji })
+  });
+
+  if (!response.ok) {
+    return parseApiError(response, "Failed to add reaction.");
+  }
+}
+
+export async function removeConversationReaction(
+  token: string,
+  conversationId: string,
+  messageId: string,
+  emoji: string
+): Promise<void> {
+  const response = await fetch(`${CHAT_BASE_URL}/conversation/${conversationId}/messages/${messageId}/reactions`, {
+    method: "DELETE",
+    headers: authJsonHeaders(token),
+    body: JSON.stringify({ emoji })
+  });
+
+  if (!response.ok) {
+    return parseApiError(response, "Failed to remove reaction.");
+  }
+}
+
+export async function getConversationReactions(
+  token: string,
+  conversationId: string,
+  messageId: string
+): Promise<MessageReaction[]> {
+  const response = await fetch(`${CHAT_BASE_URL}/conversation/${conversationId}/messages/${messageId}/reactions`, {
+    method: "GET",
+    headers: authJsonHeaders(token)
+  });
+
+  if (!response.ok) {
+    return parseApiError(response, "Failed to load reactions.");
+  }
+
+  const list = (await response.json()) as Array<{
+    id: string | number;
+    emoji: string;
+    userId: string | number;
+    createdAt?: string;
+  }>;
+
+  return list.map((item) => ({
+    id: String(item.id),
+    emoji: item.emoji,
+    userId: String(item.userId),
+    createdAt: item.createdAt
+  }));
+}
+
 export async function getChannelReadReceipts(
   token: string,
   channelId: string,
@@ -678,81 +763,13 @@ export async function getConversationReadReceipts(
   }));
 }
 
-export async function upsertPublicKey(token: string, publicKey: string): Promise<PublicKeyRecord> {
-  const response = await fetch(`${CHAT_BASE_URL}/keys`, {
-    method: "POST",
-    headers: authJsonHeaders(token),
-    body: JSON.stringify({ publicKey })
-  });
 
-  if (!response.ok) {
-    return parseApiError(response, "Failed to save public key.");
-  }
 
-  const data = (await response.json()) as { message?: string; userId: string | number; publicKey: string };
-  return {
-    message: data.message,
-    userId: String(data.userId),
-    publicKey: data.publicKey
-  };
-}
-
-export async function getMyPublicKey(token: string): Promise<PublicKeyRecord> {
-  const response = await fetch(`${CHAT_BASE_URL}/keys`, {
-    method: "GET",
-    headers: authJsonHeaders(token)
-  });
-
-  if (!response.ok) {
-    return parseApiError(response, "Failed to fetch your public key.");
-  }
-
-  const data = (await response.json()) as { userId: string | number; publicKey: string };
-  return {
-    userId: String(data.userId),
-    publicKey: data.publicKey
-  };
-}
-
-export async function getPublicKeyByUserId(token: string, userId: string): Promise<PublicKeyRecord> {
-  const response = await fetch(`${CHAT_BASE_URL}/keys/${userId}`, {
-    method: "GET",
-    headers: authJsonHeaders(token)
-  });
-
-  if (!response.ok) {
-    return parseApiError(response, "Failed to fetch user public key.");
-  }
-
-  const data = (await response.json()) as { userId: string | number; publicKey: string };
-  return {
-    userId: String(data.userId),
-    publicKey: data.publicKey
-  };
-}
-
-export async function getPublicKeysBatch(token: string, userIds: string[]): Promise<PublicKeyRecord[]> {
-  const response = await fetch(`${CHAT_BASE_URL}/keys/batch`, {
-    method: "POST",
-    headers: authJsonHeaders(token),
-    body: JSON.stringify({ userIds })
-  });
-
-  if (!response.ok) {
-    return parseApiError(response, "Failed to fetch public keys.");
-  }
-
-  const data = (await response.json()) as Array<{ userId: string | number; publicKey: string }>;
-  return data.map((item) => ({
-    userId: String(item.userId),
-    publicKey: item.publicKey
-  }));
-}
-
-export async function getFeedPosts(): Promise<FeedPost[]> {
+export async function getFeedPosts(token?: string): Promise<FeedPost[]> {
+  const headers = token ? authJsonHeaders(token) : jsonHeaders();
   const response = await fetch(`${CHAT_BASE_URL}/posts`, {
     method: "GET",
-    headers: jsonHeaders()
+    headers
   });
 
   if (!response.ok) {
@@ -761,7 +778,7 @@ export async function getFeedPosts(): Promise<FeedPost[]> {
 
   const list = (await response.json()) as Array<{
     id: string | number;
-    serverId: string | number;
+    serverId?: string | number | null;
     authorId: string | number;
     content: string;
     imageId?: string | null;
@@ -773,25 +790,55 @@ export async function getFeedPosts(): Promise<FeedPost[]> {
 
   return list.map((item) => ({
     id: String(item.id),
-    serverId: String(item.serverId),
+    serverId: item.serverId ? String(item.serverId) : "",
     authorId: String(item.authorId),
     content: item.content,
     imageId: item.imageId,
-    title: item.title,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
-    author: item.author
+    title: item.title || "Untitled",
+    createdAt: item.createdAt || new Date().toISOString(),
+    updatedAt: item.updatedAt || new Date().toISOString(),
+    author: item.author as FeedPost["author"]
   }));
+}
+
+export async function getPostById(postId: number | string): Promise<FeedPost> {
+  const response = await fetch(`${CHAT_BASE_URL}/posts/${postId}`, {
+    method: "GET",
+    headers: jsonHeaders(),
+  });
+
+  if (!response.ok) {
+    return parseApiError(response, "Failed to load post.");
+  }
+
+  const item = (await response.json()) as FeedPost;
+  return {
+    ...item,
+    id: String(item.id),
+    authorId: String(item.authorId),
+    serverId: String((item as any).serverId || ""),
+    comments: Array.isArray(item.comments) ? item.comments.map(c => ({...c, id: String(c.id), authorId: String(c.authorId), postId: String(c.postId)})) : [],
+  };
 }
 
 export async function createFeedPost(
   token: string,
-  payload: { serverId: string; content: string; imageId?: string; title?: string }
+  payload: { content: string; imageId?: string; title?: string; serverId?: string },
 ): Promise<FeedPost> {
-  const response = await fetch(`${CHAT_BASE_URL}/posts`, {
+  // Use /posts if no serverId (global/personal post)
+  // Use /server/:id/posts as fallback/backward compat or specific endpoint if it exists
+  // The new implementation uses c:\Users\imesh\OneDrive\Desktop\ChatStack\chat-service\src\post\post.controller.ts which is /posts
+  const url = payload.serverId ? `${CHAT_BASE_URL}/server/${payload.serverId}/posts` : `${CHAT_BASE_URL}/posts`;
+  
+  const response = await fetch(url, {
     method: "POST",
     headers: authJsonHeaders(token),
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      title: payload.title,
+      content: payload.content,
+      imageId: payload.imageId,
+      serverId: payload.serverId
+    }),
   });
 
   if (!response.ok) {
@@ -831,10 +878,10 @@ export async function updateFeedPost(
   };
 }
 
-export async function deleteFeedPost(token: string, postId: string): Promise<void> {
+export async function deletePost(token: string, postId: number | string): Promise<void> {
   const response = await fetch(`${CHAT_BASE_URL}/posts/${postId}`, {
     method: "DELETE",
-    headers: authJsonHeaders(token)
+    headers: authJsonHeaders(token),
   });
 
   if (!response.ok) {
@@ -867,20 +914,20 @@ export async function getPostComments(postId: string): Promise<FeedComment[]> {
     postId: String(item.postId),
     authorId: String(item.authorId),
     content: item.content,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
-    author: item.author
+    createdAt: item.createdAt || new Date().toISOString(),
+    updatedAt: item.updatedAt || new Date().toISOString(),
+    author: item.author as FeedComment["author"]
   }));
 }
 
 export async function createComment(
   token: string,
-  payload: { postId: string | number; content: string }
+  payload: { postId: number | string; content: string },
 ): Promise<FeedComment> {
   const response = await fetch(`${CHAT_BASE_URL}/comments`, {
     method: "POST",
     headers: authJsonHeaders(token),
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -892,7 +939,7 @@ export async function createComment(
     ...item,
     id: String(item.id),
     postId: String(item.postId),
-    authorId: String(item.authorId)
+    authorId: String(item.authorId),
   };
 }
 
@@ -916,13 +963,121 @@ export async function updateComment(token: string, commentId: string, content: s
   };
 }
 
-export async function deleteComment(token: string, commentId: string): Promise<void> {
+export async function deleteComment(token: string, commentId: number | string): Promise<void> {
   const response = await fetch(`${CHAT_BASE_URL}/comments/${commentId}`, {
     method: "DELETE",
-    headers: authJsonHeaders(token)
+    headers: authJsonHeaders(token),
   });
 
   if (!response.ok) {
     return parseApiError(response, "Failed to delete comment.");
   }
+}
+
+// SOCIAL CONNECTIONS
+export async function sendConnectionRequest(token: string, receiverId: string): Promise<void> {
+  const response = await fetch(`${SOCIAL_BASE_URL}/connection/request/${receiverId}`, {
+    method: "POST",
+    headers: authJsonHeaders(token)
+  });
+  if (!response.ok) return parseApiError(response, "Failed to send connection request.");
+}
+
+export async function acceptConnectionRequest(token: string, requesterId: string): Promise<void> {
+  const response = await fetch(`${SOCIAL_BASE_URL}/connection/${requesterId}/accept`, {
+    method: "PATCH",
+    headers: authJsonHeaders(token)
+  });
+  if (!response.ok) return parseApiError(response, "Failed to accept connection request.");
+}
+
+export async function removeConnection(token: string, otherUserId: string): Promise<void> {
+  const response = await fetch(`${SOCIAL_BASE_URL}/connection/${otherUserId}/remove`, {
+    method: "DELETE",
+    headers: authJsonHeaders(token)
+  });
+  if (!response.ok) return parseApiError(response, "Failed to remove connection.");
+}
+
+export async function getMyConnections(token: string): Promise<ChatUser[]> {
+  const response = await fetch(`${SOCIAL_BASE_URL}/connection/me`, {
+    method: "GET",
+    headers: authJsonHeaders(token)
+  });
+  if (!response.ok) return parseApiError(response, "Failed to load connections.");
+  
+  const rawUsers = (await response.json()) as { id: string }[];
+  if (!rawUsers || rawUsers.length === 0) return [];
+  
+  const users = await Promise.all(
+    rawUsers.map(async (u) => {
+      try {
+        const profile = await getProfileByUserId(token, u.id);
+        return {
+          id: String(u.id),
+          username: profile.username || `User ${u.id}`,
+          profile: {
+            displayName: profile.username,
+            avatarUrl: profile.avatarUrl
+          }
+        };
+      } catch (err) {
+        return {
+          id: String(u.id),
+          username: `User ${u.id}`
+        };
+      }
+    })
+  );
+  return users;
+}
+
+export async function getPendingRequests(token: string): Promise<ConnectionRequest[]> {
+  const response = await fetch(`${SOCIAL_BASE_URL}/connection/pending`, {
+    method: "GET",
+    headers: authJsonHeaders(token)
+  });
+  if (!response.ok) return parseApiError(response, "Failed to load pending requests.");
+  
+  const rawRequests = (await response.json()) as any[];
+  if (!rawRequests || rawRequests.length === 0) return [];
+  
+  const requests = await Promise.all(
+    rawRequests.map(async (req) => {
+      try {
+        const profile = await getProfileByUserId(token, req.requesterId);
+        return {
+          ...req,
+          requester: {
+            id: String(req.requesterId),
+            username: profile.username || `User ${req.requesterId}`,
+            profile: {
+              displayName: profile.username,
+              avatarUrl: profile.avatarUrl
+            }
+          }
+        };
+      } catch (err) {
+        return {
+          ...req,
+          requester: {
+            id: String(req.requesterId),
+            username: `User ${req.requesterId}`
+          }
+        };
+      }
+    })
+  );
+  
+  return requests;
+}
+
+export async function getConnectionStatus(token: string, otherUserId: string): Promise<ConnectionStatus> {
+  const response = await fetch(`${SOCIAL_BASE_URL}/connection/status/${otherUserId}`, {
+    method: "GET",
+    headers: authJsonHeaders(token)
+  });
+  if (!response.ok) return "NONE";
+  const data = await response.json();
+  return (data.status || "NONE") as ConnectionStatus;
 }

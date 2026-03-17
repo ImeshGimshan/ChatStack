@@ -35,17 +35,25 @@ export type UpdateProfilePayload = {
 };
 
 export type UserProfileResponse = {
-  userId: number;
+  userId: string;
   username: string;
   email: string;
   avatarUrl?: string;
   headline?: string;
   bio?: string;
+  skills?: string[];
+  githubUsername?: string;
+  socialLinks?: {
+    linkedin?: string;
+    github?: string;
+    twitter?: string;
+    website?: string;
+  };
 };
 
 export type LoginResponse = {
   token: string;
-  id: number;
+  id: string;
   username: string;
   email: string;
 };
@@ -53,6 +61,7 @@ export type LoginResponse = {
 const AUTH_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API || "http://localhost:8080";
 const USER_BASE_URL =
   process.env.NEXT_PUBLIC_USER_API || process.env.NEXT_PUBLIC_USER_URL || "http://localhost:5010";
+const CHAT_BASE_URL = process.env.NEXT_PUBLIC_CHAT_API || "http://localhost:3000";
 
 export async function registerUser(payload: RegisterPayload): Promise<void> {
   const response = await fetch(`${AUTH_BASE_URL}/api/auth/register`, {
@@ -119,6 +128,7 @@ export async function updateMyProfile(
   }
 }
 
+
 export async function getMyProfile(token: string): Promise<UserProfileResponse> {
   const response = await fetch(`${USER_BASE_URL}/api/profile/me`, {
     method: "GET",
@@ -146,6 +156,17 @@ export async function getProfileByUserId(
   }
 
   return (await response.json()) as UserProfileResponse;
+}
+
+export async function getUserProfile(userId: string | number): Promise<UserProfileResponse> {
+  // Since some components might not have the token explicitly when calling getUserProfile
+  // (e.g. they don't want to drill it), let's try to get it from localStorage for this specific alias
+  let token = "";
+  if (typeof window !== "undefined") {
+    token = localStorage.getItem("chatstack_token") || "";
+  }
+  
+  return getProfileByUserId(token, userId);
 }
 
 export async function searchProfilesByUsername(
