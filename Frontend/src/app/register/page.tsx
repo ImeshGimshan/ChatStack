@@ -79,17 +79,17 @@ export default function RegisterPage() {
       title="Create your account"
       description="Start with your basic account details."
       footer={
-        <p className="text-muted-foreground">
+        <p className="text-zinc-400">
           Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
+          <Link href="/login" className="text-indigo-400 hover:text-indigo-300 transition-colors drop-shadow-electric-glow hover:underline">
             Sign in
           </Link>
         </p>
       }
     >
       <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="username" className="text-muted-foreground">
+        <div className="space-y-3">
+          <Label htmlFor="username" className="font-montserrat text-zinc-300 text-sm font-medium tracking-wide">
             Username
           </Label>
           <Input
@@ -97,12 +97,12 @@ export default function RegisterPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="choose_a_username"
-            className="bg-surface border-border"
+            className="bg-black/50 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 focus-visible:border-indigo-500/50 placeholder:text-zinc-600"
             required
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-muted-foreground">
+        <div className="space-y-3">
+          <Label htmlFor="email" className="font-montserrat text-zinc-300 text-sm font-medium tracking-wide">
             Email
           </Label>
           <Input
@@ -111,12 +111,12 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@email.com"
-            className="bg-surface border-border"
+            className="bg-black/50 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 focus-visible:border-indigo-500/50 placeholder:text-zinc-600"
             required
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password" className="text-muted-foreground">
+        <div className="space-y-3">
+          <Label htmlFor="password" className="font-montserrat text-zinc-300 text-sm font-medium tracking-wide">
             Password
           </Label>
           <Input
@@ -125,12 +125,12 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="bg-surface border-border"
+            className="bg-black/50 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 focus-visible:border-indigo-500/50 placeholder:text-zinc-600"
             required
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-muted-foreground">
+        <div className="space-y-3">
+          <Label htmlFor="confirmPassword" className="font-montserrat text-zinc-300 text-sm font-medium tracking-wide">
             Confirm password
           </Label>
           <Input
@@ -139,7 +139,7 @@ export default function RegisterPage() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="••••••••"
-            className="bg-surface border-border"
+            className="bg-black/50 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 focus-visible:border-indigo-500/50 placeholder:text-zinc-600"
             required
           />
         </div>
@@ -150,7 +150,7 @@ export default function RegisterPage() {
           </Alert>
         ) : null}
 
-        <Button type="submit" className="w-full" disabled={!canSubmit}>
+        <Button type="submit" className="w-full h-11 rounded-xl border border-indigo-300/35 bg-linear-to-r from-indigo-500 via-indigo-600 to-blue-500 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 hover:from-indigo-400 hover:via-indigo-500 hover:to-blue-400 hover:shadow-[0_0_16px_rgba(99,102,241,0.5)] disabled:opacity-50 disabled:pointer-events-none" disabled={!canSubmit}>
           {isSubmitting ? "Creating account..." : "Create Account"}
         </Button>
       </form>

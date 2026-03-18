@@ -5,41 +5,69 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class ChatService {
   constructor(private prisma: PrismaService) {}
 
-  async markChannelMessageRead(messageId: bigint, userId: bigint) {
-    return this.prisma.channelMessageReadReceipt.upsert({
+      async markChannelMessageRead(messageId: bigint, userId: bigint) {
+    const targetMessage = await this.prisma.channelMessage.findUnique({
+      where: { id: messageId },
+      select: { channelId: true, createdAt: true },
+    });
+    if (!targetMessage) return null;
+
+    const unreadMessages = await this.prisma.channelMessage.findMany({
       where: {
-        userId_messageId: {
-          messageId,
+        channelId: targetMessage.channelId,
+        createdAt: { lte: targetMessage.createdAt },
+        senderId: { not: userId },
+        readReceipts: { none: { userId } },
+      },
+      select: { id: true },
+    });
+
+    if (unreadMessages.length > 0) {
+      await this.prisma.channelMessageReadReceipt.createMany({
+        data: unreadMessages.map((m) => ({
+          messageId: m.id,
           userId,
-        },
-      },
-      update: {
-        readAt: new Date(),
-      },
-      create: {
-        messageId,
-        userId,
-        readAt: new Date(),
-      },
+          readAt: new Date(),
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    return this.prisma.channelMessageReadReceipt.findUnique({
+      where: { userId_messageId: { messageId, userId } },
     });
   }
 
   async markConversationMessageRead(messageId: bigint, userId: bigint) {
-    return this.prisma.conversationMessageReadReceipt.upsert({
+    const targetMessage = await this.prisma.conversationMessage.findUnique({
+      where: { id: messageId },
+      select: { conversationId: true, createdAt: true },
+    });
+    if (!targetMessage) return null;
+
+    const unreadMessages = await this.prisma.conversationMessage.findMany({
       where: {
-        userId_messageId: {
-          messageId,
+        conversationId: targetMessage.conversationId,
+        createdAt: { lte: targetMessage.createdAt },
+        senderId: { not: userId },
+        readReceipts: { none: { userId } },
+      },
+      select: { id: true },
+    });
+
+    if (unreadMessages.length > 0) {
+      await this.prisma.conversationMessageReadReceipt.createMany({
+        data: unreadMessages.map((m) => ({
+          messageId: m.id,
           userId,
-        },
-      },
-      update: {
-        readAt: new Date(),
-      },
-      create: {
-        messageId,
-        userId,
-        readAt: new Date(),
-      }
+          readAt: new Date(),
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    return this.prisma.conversationMessageReadReceipt.findUnique({
+      where: { userId_messageId: { messageId, userId } },
     });
   }
 
@@ -59,7 +87,7 @@ export class ChatService {
     });
     return unreadCount;
   }
-  
+
   async getConversationUnreadCount(conversationId: bigint, userId: bigint) {
     const unreadCount = await this.prisma.conversationMessage.count({
       where: {

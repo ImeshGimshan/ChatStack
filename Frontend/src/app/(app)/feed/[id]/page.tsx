@@ -2,17 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { 
-  Loader2, 
-  AlertCircle, 
-  ArrowLeft, 
-  Trash2, 
-  Heart, 
-  MessageSquare, 
+import {
+  Loader2,
+  AlertCircle,
+  ArrowLeft,
+  Trash2,
+  Heart,
+  MessageSquare,
   Share2,
   Bookmark,
-  Send
+  Send,
+  Pencil,
+  MoreVertical
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -22,8 +31,11 @@ import {
   getPostComments,
   createComment,
   deleteComment,
+  updateComment,
   deletePost,
+  updateFeedPost,
   getPostById,
+  toggleFeedPostLike,
   type FeedPost,
   type FeedComment
 } from "@/lib/chat-client";
@@ -32,25 +44,62 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
+import { getMediaAccessUrl } from "@/lib/media-client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function PostImage({ imageId }: { imageId: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+     getMediaAccessUrl(imageId).then(setSrc).catch(console.error);
+  }, [imageId]);
+
+  if (!src) return <Skeleton className="w-full aspect-video rounded-2xl mb-6" />;
+
+  const isVideo = src.match(/\.(mp4|webm|avi|mkv|mov|ogg)(\?.*)?$/i);
+
+  return (
+    <div className="relative aspect-video rounded-2xl overflow-hidden mb-6 block ring-1 ring-border/50">
+      {isVideo ? (
+        <video src={src} controls className="w-full h-full object-cover transition-transform duration-700 ease-out" />
+      ) : (
+        <img src={src} alt="Post content" className="w-full h-full object-cover transition-transform duration-700 ease-out" />
+      )}
+    </div>
+  );
+}
+
 function CommentItem({
   comment,
   isAuthor,
-  onDelete
+  onDelete,
+  onUpdate
 }: {
   comment: FeedComment;
   isAuthor: boolean;
   onDelete: (id: string) => void;
+  onUpdate: (id: string, newContent: string) => void;
 }) {
-  const authorName = comment.author?.profile?.displayName || "Anonymous";
+  const router = useRouter();
+  const authorName = comment.author?.profile?.displayName || (comment.author as any)?.username || "Anonymous";
   const avatarText = authorName.substring(0, 2).toUpperCase();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+
+  const handleSave = () => {
+    if (editContent.trim() && editContent !== comment.content) {
+      onUpdate(comment.id, editContent.trim());
+    }
+    setIsEditing(false);
+  };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       className="flex gap-4 group py-4"
     >
-      <Avatar className="h-9 w-9 border border-border/40">
+      <Avatar onClick={() => router.push(`/profile/${comment.authorId}`)} className="h-9 w-9 border border-border/40 cursor-pointer hover:opacity-80 transition-opacity">
         <AvatarFallback className="bg-surface text-[10px] font-bold">
           {avatarText}
         </AvatarFallback>
@@ -59,7 +108,7 @@ function CommentItem({
       <div className="flex-1 space-y-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-foreground">
+            <span onClick={() => router.push(`/profile/${comment.authorId}`)} className="text-sm font-bold text-foreground hover:text-primary cursor-pointer transition-colors">
               {authorName}
             </span>
             <span className="text-[10px] text-muted-foreground font-medium">
@@ -67,21 +116,52 @@ function CommentItem({
             </span>
           </div>
 
-          {isAuthor && (
-            <Button
-              onClick={() => onDelete(comment.id)}
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-destructive/50 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
-            >
-              <Trash2 size={14} />
-            </Button>
+          {isAuthor && !isEditing && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MoreVertical size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[160px] cursor-pointer">
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Pencil size={14} className="mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(comment.id)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <Trash2 size={14} className="mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
 
-        <p className="text-sm text-foreground/80 leading-relaxed break-words">
-          {comment.content}
-        </p>
+        {isEditing ? (
+          <div className="mt-2 space-y-2">
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="min-h-[80px] bg-background/50 border-input text-sm resize-none"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => {
+                setIsEditing(false);
+                setEditContent(comment.content);
+              }}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={!editContent.trim() || editContent === comment.content}>
+                Save
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-foreground/80 leading-relaxed break-words">
+            {comment.content}
+          </p>
+        )}
       </div>
     </motion.div>
   );
@@ -99,6 +179,10 @@ function PostDetailPageContent() {
   const [loading, setLoading] = useState(true);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
 
   useEffect(() => {
     if (!postId) {
@@ -110,11 +194,12 @@ function PostDetailPageContent() {
       setLoading(true);
       setError(null);
       try {
-        const found = await getPostById(postId);
+        const found = await getPostById(postId, token);
         if (!found) {
           setError("Post not found");
         } else {
           setPost(found);
+          setLikeCount(found.likeCount ?? 0); setLiked(!!found.hasLiked);
           const commentData = await getPostComments(postId);
           setComments(commentData || []);
         }
@@ -128,6 +213,22 @@ function PostDetailPageContent() {
 
     loadPost();
   }, [postId]);
+
+  const handleLike = async () => {
+    if (!token || !post) return;
+    try {
+      const isCurrentlyLiked = liked;
+      setLiked(!isCurrentlyLiked);
+      setLikeCount((prev) => (isCurrentlyLiked ? prev - 1 : prev + 1));
+      
+      await toggleFeedPostLike(token, post.id);
+    } catch (err) {
+      // Revert optimistic update
+      setLiked(liked);
+      setLikeCount(likeCount);
+      toast.error("Failed to toggle like");
+    }
+  };
 
   const handleCreateComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,6 +263,18 @@ function PostDetailPageContent() {
     }
   };
 
+  const handleUpdatePost = async () => {
+    if (!token || !post || !editContent.trim()) return;
+    try {
+      const updated = await updateFeedPost(token, post.id, { content: editContent.trim() });
+      setPost(prev => prev ? { ...prev, content: updated.content, updatedAt: updated.updatedAt } : null);
+      setIsEditing(false);
+      toast.success("Post updated successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update post");
+    }
+  };
+
   const handleDeleteComment = async (id: string) => {
     if (!token) return;
     try {
@@ -170,6 +283,17 @@ function PostDetailPageContent() {
       toast.success("Comment removed");
     } catch (err: any) {
       toast.error(err.message || "Failed to delete comment");
+    }
+  };
+
+  const handleUpdateComment = async (id: string, newContent: string) => {
+    if (!token) return;
+    try {
+      const updated = await updateComment(token, id, newContent);
+      setComments(prev => prev.map(c => c.id === id ? { ...c, content: updated.content } : c));
+      toast.success("Comment updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update comment");
     }
   };
 
@@ -197,7 +321,7 @@ function PostDetailPageContent() {
   }
 
   const isAuthor = String(post.authorId) === String(user?.id);
-  const authorName = post.author?.profile?.displayName || "Anonymous";
+  const authorName = post.author?.profile?.displayName || (post.author as any)?.username || "Anonymous";
 
   return (
     <div className="max-w-[800px] mx-auto">
@@ -205,11 +329,34 @@ function PostDetailPageContent() {
         <Button variant="ghost" onClick={() => router.back()} className="rounded-full h-10 px-4 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <div className="flex gap-2">
-          {isAuthor && (
-            <Button variant="ghost" size="icon" onClick={handleDeletePost} className="text-destructive/60 hover:text-destructive hover:bg-destructive/10 rounded-full">
-              <Trash2 size={18} />
-            </Button>
+        <div className="flex gap-2 items-center">
+          {isAuthor && !isEditing && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground hover:bg-white/5">
+                  <MoreVertical size={18} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[160px] bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl rounded-2xl">
+                <DropdownMenuItem 
+                  onClick={() => {
+                    setEditContent(post.content);
+                    setIsEditing(true);
+                  }}
+                  className="gap-2 focus:bg-white/5 rounded-xl cursor-pointer py-2 font-medium"
+                >
+                  <Pencil size={15} className="text-muted-foreground" />
+                  Edit Post
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleDeletePost}
+                  className="gap-2 focus:bg-destructive/10 text-destructive focus:text-destructive rounded-xl cursor-pointer py-2 font-medium"
+                >
+                  <Trash2 size={15} />
+                  Delete Post
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground">
             <Share2 size={18} />
@@ -224,13 +371,13 @@ function PostDetailPageContent() {
       >
         <div className="p-8 pb-4">
           <div className="flex items-center gap-4 mb-6">
-            <Avatar className="h-12 w-12 border-2 border-primary/20">
+            <Avatar onClick={() => router.push(`/profile/${post.authorId}`)} className="h-12 w-12 border-2 border-primary/20 cursor-pointer hover:opacity-80 transition-opacity">
               <AvatarFallback className="bg-surface text-sm font-bold">
                 {authorName.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="text-lg font-bold text-foreground leading-none">{authorName}</h2>
+              <h2 onClick={() => router.push(`/profile/${post.authorId}`)} className="text-lg font-bold text-foreground leading-none hover:text-primary cursor-pointer transition-colors">{authorName}</h2>
               <p className="text-xs text-muted-foreground mt-1 font-medium italic">
                 {formatDistanceToNow(new Date(post.createdAt))} ago
               </p>
@@ -243,23 +390,46 @@ function PostDetailPageContent() {
             </h1>
           )}
 
-          <p className="text-lg text-foreground/90 leading-relaxed whitespace-pre-wrap mb-6 font-medium">
-            {post.content}
-          </p>
-
-          {post.imageId && (
-            <div className="rounded-2xl overflow-hidden border border-border/20 mb-6 group">
-              <img 
-                src={post.imageId} 
-                className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" 
-                alt="Post attachment" 
+          {isEditing ? (
+            <div className="space-y-4 mb-6">
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full bg-background/50 border-input font-medium text-lg leading-relaxed focus-visible:ring-1 focus-visible:ring-primary/50 min-h-[150px] resize-none p-4 rounded-2xl"
+                autoFocus
+                placeholder="What's heavily on your mind?"
               />
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsEditing(false)}
+                  className="rounded-full px-6 hover:bg-white/5 font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleUpdatePost}
+                  disabled={!editContent.trim() || editContent === post.content}
+                  className="rounded-full px-6 bg-primary font-bold text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all"
+                >
+                  Save Changes
+                </Button>
+              </div>
             </div>
+          ) : (
+            <p className="text-lg text-foreground/90 leading-relaxed whitespace-pre-wrap mb-6 font-medium">
+              {post.content}
+            </p>
           )}
 
+          {post.imageId && <PostImage imageId={post.imageId} />}
+
           <div className="flex items-center gap-8 py-4 border-t border-border/10">
-            <button className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-              <Heart size={20} /> Like
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-2 text-sm font-bold transition-colors ${liked ? 'text-rose-500 hover:text-rose-600' : 'text-muted-foreground hover:text-rose-500'}`}
+            >
+              <Heart size={20} className={liked ? "fill-current" : ""} /> {liked ? `${likeCount} Liked` : `${likeCount} Like${likeCount !== 1 ? 's' : ''}`}
             </button>
             <button className="flex items-center gap-2 text-sm font-bold text-primary transition-colors">
               <MessageSquare size={20} /> {comments.length} Comments
@@ -314,6 +484,7 @@ function PostDetailPageContent() {
                     comment={comment}
                     isAuthor={String(comment.authorId) === String(user?.id)}
                     onDelete={handleDeleteComment}
+                    onUpdate={handleUpdateComment}
                   />
                 ))}
               </AnimatePresence>

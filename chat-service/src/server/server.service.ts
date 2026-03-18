@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
@@ -67,7 +71,9 @@ export class ServerService {
     } catch (error: any) {
       console.error('CreateServer error:', error);
       if (error?.code === 'P2002') {
-        throw new ConflictException(`Server with name '${name}' already exists.`);
+        throw new ConflictException(
+          `Server with name '${name}' already exists.`,
+        );
       }
       throw new InternalServerErrorException('Failed to create server');
     }

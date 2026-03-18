@@ -32,28 +32,17 @@ export function AuthShell({
   return (
     <div className="flex min-h-svh items-center justify-center bg-background p-4 font-sans">
       <div
-        className={`w-full ${maxWidthClassName} space-y-6 animate-float-up`}
+        className={`w-full ${maxWidthClassName} space-y-6 animate-float-up bg-[#0A0A0B]/80 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]`}
       >
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2 text-xl font-bold text-foreground">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-6 w-6 text-primary"
-            >
-              <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-            </svg>
+          <Link 
+            href="/" 
+            className="font-special rounded-full px-3 py-2 text-2xl font-semibold tracking-tight text-white mb-2 inline-block [text-shadow:0_0_10px_rgba(99,102,241,0.55)]"
+          >
             ChatStack
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
-          <div className="text-muted-foreground text-sm">{description}</div>
+          <h1 className="text-2xl font-special tracking-tight text-white">{title}</h1>
+          <div className="text-zinc-400 text-sm">{description}</div>
         </div>
 
         <div className="space-y-4">

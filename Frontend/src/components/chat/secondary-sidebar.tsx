@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, Hash, Plus, Settings, Trash2, UserPlus } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -77,6 +78,7 @@ export function SecondarySidebar({
   const [isJoining, setIsJoining] = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
   const [newChannelName, setNewChannelName] = useState("");
+  const router = useRouter();
   const [createChannelError, setCreateChannelError] = useState<string | null>(null);
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [deletingChannelId, setDeletingChannelId] = useState<string | null>(null);
@@ -522,8 +524,11 @@ export function SecondarySidebar({
       ) : null}
 
       <div className="mt-auto border-t border-white/10 bg-black/50 px-3 py-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
+       <div className="flex items-center justify-between gap-2">
+          <div 
+            className="flex min-w-0 items-center gap-2 cursor-pointer hover:bg-white/5 p-1 -ml-1 rounded-md transition-colors"
+            onClick={() => router.push('/profile/me')}
+          >
             <Avatar className="size-9 border border-white/15">
               <AvatarImage src={avatarUrl} alt={username} />
               <AvatarFallback className="font-montserrat bg-white/10 text-zinc-100">{initials}</AvatarFallback>

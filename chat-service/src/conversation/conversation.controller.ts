@@ -113,17 +113,17 @@ export class ConversationController {
   ) {
     const editorId = req.user?.userId;
     if (!editorId) {
-        throw new BadRequestException('Authenticated userId is required');
+      throw new BadRequestException('Authenticated userId is required');
     }
     try {
-        return this.conversationService.editMessage(
-            BigInt(messageId),
-            BigInt(editorId),
-            dto.newContent,
-        )
+      return this.conversationService.editMessage(
+        BigInt(messageId),
+        BigInt(editorId),
+        dto.newContent,
+      );
     } catch (error: any) {
-        console.error('EditMessage error:', error);
-        throw new InternalServerErrorException('Failed to edit message');
+      console.error('EditMessage error:', error);
+      throw new InternalServerErrorException('Failed to edit message');
     }
   }
 

@@ -26,6 +26,7 @@ model User {
   posts                           Post[]                        @relation("PostAuthor")
   comments                        Comment[]                     @relation("CommentAuthor")
   ownedServers                    Server[]                      @relation("ServerOwner")
+  postLikes                       PostLike[]
 
 
   @@map("users")
@@ -298,10 +299,25 @@ model Post {
   author   User   @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   comments Comment[]
+  likes    PostLike[]
 
   @@index([serverId])
   @@index([authorId])
   @@map("posts")
+}
+
+model PostLike {
+  id        BigInt   @id @default(autoincrement())
+  postId    BigInt
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    BigInt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_likes")
 }
 
 model Comment {
@@ -346,4 +362,4 @@ model Permission {
 
   @@map("permissions")
 }
-
+

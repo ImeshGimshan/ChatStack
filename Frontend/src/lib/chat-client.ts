@@ -72,6 +72,8 @@ export type FeedPost = {
   title: string;
   createdAt: string;
   updatedAt: string;
+  likeCount?: number;
+  hasLiked?: boolean;
   author?: {
     profile?: {
       displayName?: string;
@@ -765,7 +767,7 @@ export async function getConversationReadReceipts(
 
 
 
-export async function getFeedPosts(token?: string): Promise<FeedPost[]> {
+export async function getFeedPosts(token?: string | null): Promise<FeedPost[]> {
   const headers = token ? authJsonHeaders(token) : jsonHeaders();
   const response = await fetch(`${CHAT_BASE_URL}/posts`, {
     method: "GET",
@@ -782,41 +784,52 @@ export async function getFeedPosts(token?: string): Promise<FeedPost[]> {
     authorId: string | number;
     content: string;
     imageId?: string | null;
+    imageUrl?: string | null;
     title?: string | null;
     createdAt?: string;
     updatedAt?: string;
-    author?: unknown | null;
-  }>;
+      likeCount?: number;
+      hasLiked?: boolean;
+      author?: unknown | null;
+      comments?: FeedComment[];
+    }>;
 
-  return list.map((item) => ({
-    id: String(item.id),
-    serverId: item.serverId ? String(item.serverId) : "",
-    authorId: String(item.authorId),
-    content: item.content,
-    imageId: item.imageId,
-    title: item.title || "Untitled",
-    createdAt: item.createdAt || new Date().toISOString(),
-    updatedAt: item.updatedAt || new Date().toISOString(),
-    author: item.author as FeedPost["author"]
-  }));
-}
+    return list.map((item) => ({
+      id: String(item.id),
+      serverId: item.serverId ? String(item.serverId) : "",
+      authorId: String(item.authorId),
+      content: item.content,
+      imageId: item.imageId || item.imageUrl,
+      title: item.title || "Untitled",
+      createdAt: item.createdAt || new Date().toISOString(),
+      updatedAt: item.updatedAt || new Date().toISOString(),
+      likeCount: item.likeCount ?? 0,
+      hasLiked: !!item.hasLiked,
+      author: item.author as FeedPost["author"],
+      comments: item.comments || []
+    }));
+  }
 
-export async function getPostById(postId: number | string): Promise<FeedPost> {
+  export async function getPostById(postId: number | string, token?: string | null): Promise<FeedPost> {
+  const headers = token ? authJsonHeaders(token) : jsonHeaders();
   const response = await fetch(`${CHAT_BASE_URL}/posts/${postId}`, {
     method: "GET",
-    headers: jsonHeaders(),
+    headers,
   });
 
   if (!response.ok) {
     return parseApiError(response, "Failed to load post.");
   }
 
-  const item = (await response.json()) as FeedPost;
+  const item = (await response.json()) as FeedPost & { imageUrl?: string; likeCount?: number; hasLiked?: boolean };
   return {
     ...item,
     id: String(item.id),
     authorId: String(item.authorId),
     serverId: String((item as any).serverId || ""),
+    imageId: item.imageId || item.imageUrl,
+    likeCount: item.likeCount ?? 0,
+    hasLiked: !!item.hasLiked,
     comments: Array.isArray(item.comments) ? item.comments.map(c => ({...c, id: String(c.id), authorId: String(c.authorId), postId: String(c.postId)})) : [],
   };
 }
@@ -845,12 +858,13 @@ export async function createFeedPost(
     return parseApiError(response, "Failed to create post.");
   }
 
-  const item = (await response.json()) as FeedPost;
+  const item = (await response.json()) as FeedPost & { imageUrl?: string };
   return {
     ...item,
     id: String(item.id),
     serverId: String(item.serverId),
-    authorId: String(item.authorId)
+    authorId: String(item.authorId),
+    imageId: item.imageId || item.imageUrl
   };
 }
 
@@ -869,12 +883,13 @@ export async function updateFeedPost(
     return parseApiError(response, "Failed to update post.");
   }
 
-  const item = (await response.json()) as FeedPost;
+  const item = (await response.json()) as FeedPost & { imageUrl?: string };
   return {
     ...item,
     id: String(item.id),
     serverId: String(item.serverId),
-    authorId: String(item.authorId)
+    authorId: String(item.authorId),
+    imageId: item.imageId || item.imageUrl
   };
 }
 
@@ -927,7 +942,7 @@ export async function createComment(
   const response = await fetch(`${CHAT_BASE_URL}/comments`, {
     method: "POST",
     headers: authJsonHeaders(token),
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, postId: Number(payload.postId) }),
   });
 
   if (!response.ok) {
@@ -1081,3 +1096,4 @@ export async function getConnectionStatus(token: string, otherUserId: string): P
   const data = await response.json();
   return (data.status || "NONE") as ConnectionStatus;
 }
+export async function toggleFeedPostLike(token: string, postId: string) { const response = await fetch(`${CHAT_BASE_URL}/posts/${postId}/like`, { method: 'POST', headers: authJsonHeaders(token) }); if (response.status !== 200 && response.status !== 201) throw new Error('Failed to toggle like'); return response.json(); }

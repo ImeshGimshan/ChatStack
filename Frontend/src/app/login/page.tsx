@@ -95,17 +95,17 @@ function LoginPageContent() {
       title="Sign in to your account"
       description="Enter your credentials to access your chat servers."
       footer={
-        <p className="text-muted-foreground">
+        <p className="text-zinc-400">
           Don't have an account?{" "}
-          <Link href="/register" className="text-primary hover:underline">
+          <Link href="/register" className="text-indigo-400 hover:text-indigo-300 transition-colors drop-shadow-electric-glow hover:underline">
             Sign up
           </Link>
         </p>
       }
     >
       <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="username" className="text-muted-foreground">
+        <div className="space-y-3">
+          <Label htmlFor="username" className="font-montserrat text-zinc-300 text-sm font-medium tracking-wide">
             Username
           </Label>
           <Input
@@ -116,12 +116,12 @@ function LoginPageContent() {
             autoComplete="username"
             required
             placeholder="your_username"
-            className="bg-surface border-border"
+            className="bg-black/50 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 focus-visible:border-indigo-500/50 placeholder:text-zinc-600"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password" className="text-muted-foreground">
+        <div className="space-y-3">
+          <Label htmlFor="password" className="font-montserrat text-zinc-300 text-sm font-medium tracking-wide">
             Password
           </Label>
           <Input
@@ -132,7 +132,7 @@ function LoginPageContent() {
             autoComplete="current-password"
             required
             placeholder="••••••••"
-            className="bg-surface border-border"
+            className="bg-black/50 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 focus-visible:border-indigo-500/50 placeholder:text-zinc-600"
           />
         </div>
 
@@ -142,12 +142,12 @@ function LoginPageContent() {
           </Alert>
         ) : null}
 
-        <Button type="submit" className="w-full" disabled={!canSubmit}>
+        <Button type="submit" className="w-full h-11 rounded-xl border border-indigo-300/35 bg-linear-to-r from-indigo-500 via-indigo-600 to-blue-500 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 hover:from-indigo-400 hover:via-indigo-500 hover:to-blue-400 hover:shadow-[0_0_16px_rgba(99,102,241,0.5)] disabled:opacity-50 disabled:pointer-events-none" disabled={!canSubmit}>
           {isSubmitting ? "Signing in..." : "Sign In"}
         </Button>
 
         <div className="text-center pt-2">
-          <Link href="/forgot-password" disable-link-formatting="true" className="text-primary hover:underline text-sm">
+          <Link href="/forgot-password" disable-link-formatting="true" className="text-indigo-400 hover:text-indigo-300 hover:underline text-sm transition-colors">
             Forgot password?
           </Link>
         </div>

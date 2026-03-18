@@ -8,7 +8,10 @@ export class UpdatePostDto {
   @MaxLength(5000)
   content?: string;
 
-  @ApiProperty({ description: 'The ID of a new attached image', required: false })
+  @ApiProperty({
+    description: 'The ID of a new attached image',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   imageId?: string;

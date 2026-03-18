@@ -21,29 +21,44 @@ export class PostService {
         content: createPostDto.content,
         imageUrl: createPostDto.imageId,
         authorId: BigInt(userIdFromToken),
-        serverId: createPostDto.serverId ? BigInt(createPostDto.serverId) : null,
+        serverId: createPostDto.serverId
+          ? BigInt(createPostDto.serverId)
+          : null,
         title: createPostDto.title,
       },
     });
   }
 
-  async getFeed(currentUserId?: string) {
+  async getFeed(currentUserId?: string, token?: string) {
     let authorIdFilter: bigint[] = [];
 
-    if (currentUserId) {
+    if (currentUserId && token) {
       const bUserId = BigInt(currentUserId);
       authorIdFilter = [bUserId];
       try {
-        const socialServiceUrl = process.env.SOCIAL_SERVICE_URL || 'http://localhost:3334';
-        const response = await fetch(`${socialServiceUrl}/connection/user/${currentUserId}`);
+        const socialServiceUrl =
+          process.env.SOCIAL_SERVICE_URL || 'http://localhost:3334';
+        const response = await fetch(
+          `${socialServiceUrl}/api/connection/user/${currentUserId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
         if (response.ok) {
           const connections = await response.json();
           const connectionIds = connections.map((conn: any) =>
-            conn.requesterId === Number(currentUserId) ? BigInt(conn.addresseeId) : BigInt(conn.requesterId),
+            conn.requesterId === Number(currentUserId)
+              ? BigInt(conn.addresseeId)
+              : BigInt(conn.requesterId),
           );
           authorIdFilter = [bUserId, ...connectionIds];
         } else {
-          console.warn('Failed to fetch connections from social-service, status:', response.status);
+          console.warn(
+            'Failed to fetch connections from social-service, status:',
+            response.status,
+          );
         }
       } catch (err) {
         console.error('Failed to fetch connections from social-service', err);
@@ -52,18 +67,30 @@ export class PostService {
 
     // Get posts
     const posts = await this.prisma.post.findMany({
-      where: authorIdFilter.length > 0 ? {
-        authorId: { in: authorIdFilter }
-      } : {},
-      orderBy: {
-        createdAt: 'desc',
-      },
+      where:
+        authorIdFilter.length > 0
+          ? {
+              authorId: { in: authorIdFilter },
+            }
+          : {},
       include: {
         comments: {
           take: 5,
           orderBy: { createdAt: 'desc' },
-        }
-      }
+        },
+        _count: {
+          select: { likes: true },
+        },
+        ...(currentUserId && {
+          likes: {
+            where: { userId: BigInt(currentUserId) },
+            take: 1,
+          }
+        }),
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     if (posts.length === 0) return [];
@@ -71,7 +98,6 @@ export class PostService {
     // Extract unique author IDs
     const authorIds = [...new Set(posts.map((post) => Number(post.authorId)))];
 
-    // Fetch user details from auth-service — fail gracefully if unavailable
     let userMap = new Map<number, any>();
     try {
       const users = await this.authService.getUsersByIds(authorIds);
@@ -81,16 +107,87 @@ export class PostService {
     }
 
     // Merge posts with author data
-    return posts.map((post) => ({
+    return posts.map((post: any) => ({
       ...post,
       id: post.id.toString(),
       authorId: post.authorId.toString(),
       serverId: post.serverId?.toString(),
+      likeCount: post._count?.likes ?? 0,
+      hasLiked: post.likes ? post.likes.length > 0 : false,
       author: userMap.get(Number(post.authorId)) ?? {
         id: post.authorId.toString(),
         username: `user-${post.authorId}`,
       },
+      comments: post.comments
+        ? post.comments.map((comment: any) => ({
+            ...comment,
+            id: comment.id.toString(),
+            postId: comment.postId.toString(),
+            authorId: comment.authorId.toString(),
+          }))
+        : [],
     }));
+  }
+
+  async getPostById(id: number, currentUserId?: string, token?: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: BigInt(id) },
+      include: {
+        comments: {
+          orderBy: { createdAt: 'desc' },
+        },
+        _count: {
+          select: { likes: true },
+        },
+        ...(currentUserId && {
+          likes: {
+            where: { userId: BigInt(currentUserId) },
+            take: 1,
+          }
+        }),
+      },
+    });
+
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    let authorData = {
+      id: post.authorId.toString(),
+      username: `user-${post.authorId}`,
+    };
+
+    try {
+      const users = await this.authService.getUsersByIds([
+        Number(post.authorId),
+      ]);
+      if (users.length > 0) {
+        authorData = {
+          ...users[0],
+          id: users[0].id.toString(),
+        };
+      }
+    } catch {
+      // Ignore
+    }
+
+    return {
+      ...post,
+      id: post.id.toString(),
+      authorId: post.authorId.toString(),
+      serverId: post.serverId?.toString(),
+      likeCount: (post as any)._count?.likes ?? 0,
+      hasLiked: (post as any).likes ? (post as any).likes.length > 0 : false,
+      author: authorData,
+      comments: post.comments
+        ? post.comments.map((comment: any) => ({
+            ...comment,
+            id: comment.id.toString(),
+            postId: comment.postId.toString(),
+            authorId: comment.authorId.toString(),
+          }))
+        : [],
+    };
   }
 
   async updatePost(
@@ -128,5 +225,34 @@ export class PostService {
     return this.prisma.post.delete({
       where: { id: Number(id) },
     });
+  }
+
+  async toggleLike(postId: number, userId: string) {
+    const pId = BigInt(postId);
+    const uId = BigInt(userId);
+
+    const existingLike = await this.prisma.postLike.findUnique({
+      where: {
+        postId_userId: {
+          postId: pId,
+          userId: uId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      await this.prisma.postLike.delete({
+        where: { id: existingLike.id },
+      });
+      return { liked: false };
+    } else {
+      await this.prisma.postLike.create({
+        data: {
+          postId: pId,
+          userId: uId,
+        },
+      });
+      return { liked: true };
+    }
   }
 }

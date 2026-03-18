@@ -6,7 +6,10 @@ export class AddMemberDto {
   @IsString()
   userId: string;
 
-  @ApiProperty({ description: 'The role of the user (member, moderator, admin)', required: false })
+  @ApiProperty({
+    description: 'The role of the user (member, moderator, admin)',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   @IsIn(['member', 'moderator', 'admin'])

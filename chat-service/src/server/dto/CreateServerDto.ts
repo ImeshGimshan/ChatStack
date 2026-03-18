@@ -6,7 +6,10 @@ export class CreateServerDto {
   @IsString()
   name!: string;
 
-  @ApiProperty({ description: 'The description of the server', required: false })
+  @ApiProperty({
+    description: 'The description of the server',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   description?: string;

@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-poppins);
+  --font-sans: var(--font-montserrat);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-alt: var(--font-montserrat);
   --font-display: var(--font-tektur);
@@ -50,52 +50,52 @@
 }
 
 :root {
-  --background: 222 47% 4%;
-  --foreground: 210 40% 98%;
+  --background: 240 5% 4%;
+  --foreground: 0 0% 98%;
 
-  --card: 222 40% 6%;
-  --card-foreground: 210 40% 98%;
+  --card: 240 5% 6%;
+  --card-foreground: 0 0% 98%;
 
-  --popover: 222 40% 8%;
-  --popover-foreground: 210 40% 98%;
+  --popover: 240 5% 6%;
+  --popover-foreground: 0 0% 98%;
 
-  --primary: 217 91% 60%;
-  --primary-foreground: 210 40% 98%;
+  --primary: 243 75% 59%;
+  --primary-foreground: 0 0% 98%;
 
-  --secondary: 215 25% 12%;
-  --secondary-foreground: 210 40% 90%;
+  --secondary: 240 5% 12%;
+  --secondary-foreground: 0 0% 98%;
 
-  --muted: 215 25% 15%;
-  --muted-foreground: 215 20% 55%;
+  --muted: 240 5% 15%;
+  --muted-foreground: 240 5% 65%;
 
-  --accent: 270 80% 60%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 240 5% 15%;
+  --accent-foreground: 0 0% 98%;
 
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
 
-  --border: 217 19% 14%;
-  --input: 217 19% 18%;
-  --ring: 217 91% 60%;
+  --border: 240 5% 15%;
+  --input: 240 5% 15%;
+  --ring: 243 75% 59%;
 
-  --radius: 0.375rem;
+  --radius: 0.5rem;
 
-  --sidebar-background: 222 40% 5%;
-  --sidebar-foreground: 210 20% 70%;
-  --sidebar-primary: 217 91% 60%;
-  --sidebar-primary-foreground: 210 40% 98%;
-  --sidebar-accent: 215 25% 12%;
-  --sidebar-accent-foreground: 210 40% 90%;
-  --sidebar-border: 217 19% 12%;
-  --sidebar-ring: 217 91% 60%;
+  --sidebar-background: 240 5% 4%;
+  --sidebar-foreground: 240 5% 65%;
+  --sidebar-primary: 243 75% 59%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 5% 12%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 240 5% 10%;
+  --sidebar-ring: 243 75% 59%;
 
   /* Custom tokens */
-  --surface: 222 40% 7%;
-  --surface-hover: 222 40% 9%;
+  --surface: 240 5% 7%;
+  --surface-hover: 240 5% 9%;
   --online: 142 71% 45%;
-  --glow-primary: 217 91% 60%;
-  --hero-gradient-start: 270 80% 40%;
-  --hero-gradient-end: 217 91% 50%;
+  --glow-primary: 243 75% 59%;
+  --hero-gradient-start: 243 75% 59%;
+  --hero-gradient-end: 233 89% 73%;
 
   /* Preserve Landing Page font variables */
   --font-poppins: 'Poppins';
@@ -104,10 +104,8 @@
 }
 
 .dark {
-  /* Lovable is already a dark theme, so we can keep the same values or refine them */
-  --background: 222 47% 4%;
-  --foreground: 210 40% 98%;
-  /* ... same as root for now since Lovable is dark by default */
+  --background: 240 5% 4%;
+  --foreground: 0 0% 98%;
 }
 
 @theme inline {
@@ -148,7 +146,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-montserrat), system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   
   /* Preserve Landing Page fonts in theme */
@@ -185,9 +183,13 @@
     @apply border-border;
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-tektur), sans-serif;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-montserrat), system-ui, -apple-system, sans-serif;
     letter-spacing: -0.01em;
   }
 }
@@ -214,4 +216,4 @@
     background-color: hsl(var(--muted));
     border-radius: 3px;
   }
-}
+}
