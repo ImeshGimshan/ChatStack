@@ -49,7 +49,7 @@ export default function MessageRow({
     'text-rose-400'
   ];
   
-  const getColorForName = (name) => {
+  const getColorForName = (name: string) => {
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
