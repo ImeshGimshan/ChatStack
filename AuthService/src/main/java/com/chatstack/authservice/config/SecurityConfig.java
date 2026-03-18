@@ -26,10 +26,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource( request -> {
                     var corsConfig = new CorsConfiguration();
-                    corsConfig.setAllowedOriginPatterns(List.of("*"));
-                    corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    corsConfig.setAllowedHeaders(List.of("*"));
-                    corsConfig.setAllowCredentials(true);
+                    corsConfig.setAllowedOrigins(List.of("https://chat-stack-azure.vercel.app"));
+                    corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                    corsConfig.setAllowedHeaders(List.of("Content-Type", "Authorization"));
+                    corsConfig.setAllowCredentials(false);
                     return corsConfig;
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy
@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/resendOtp").permitAll()
                         .requestMatchers("/api/auth/forgotPassword").permitAll()
                         .requestMatchers("/api/auth/resetPassword").permitAll()
+                        .requestMatchers("/api/internal/**").permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
                         .anyRequest().authenticated()
                 );
