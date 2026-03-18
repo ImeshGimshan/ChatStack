@@ -14,13 +14,20 @@ export class CreateChannelDto {
   @MaxLength(50)
   name: string;
 
-  @ApiProperty({ description: 'The description of the channel', required: false })
+  @ApiProperty({
+    description: 'The description of the channel',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(200)
   description?: string;
 
-  @ApiProperty({ description: 'Whether the channel is private', required: false, default: false })
+  @ApiProperty({
+    description: 'Whether the channel is private',
+    required: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   isPrivate?: boolean;

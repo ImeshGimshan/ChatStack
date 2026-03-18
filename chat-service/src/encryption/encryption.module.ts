@@ -5,8 +5,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { KeysController } from './keys/keys.controller';
 
 @Module({
-    providers: [EncryptionService, KeyService, PrismaService],
-    controllers: [KeysController],
-    exports: [EncryptionService, KeyService],
+  providers: [EncryptionService, KeyService, PrismaService],
+  controllers: [KeysController],
+  exports: [EncryptionService, KeyService],
 })
 export class EncryptionModule {}

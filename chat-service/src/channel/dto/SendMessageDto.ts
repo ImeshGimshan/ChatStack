@@ -6,7 +6,10 @@ export class SendChannelMessageDto {
   @IsString()
   content: string;
 
-  @ApiProperty({ description: 'Whether the message is encrypted', required: false })
+  @ApiProperty({
+    description: 'Whether the message is encrypted',
+    required: false,
+  })
   @IsOptional()
   @IsBoolean()
   isEncrypted?: boolean;

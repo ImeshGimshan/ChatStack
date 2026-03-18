@@ -26,7 +26,6 @@ import { JwtService } from '@nestjs/jwt';
   },
   namespace: '/chat',
 })
-
 @UseGuards(WsAuthGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -98,7 +97,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.join(`conversation-${conv.id}`);
       });
 
-      console.log(`User ${userId} auto-joined ${channels.length} channels and ${conversations.length} conversations`);
+      console.log(
+        `User ${userId} auto-joined ${channels.length} channels and ${conversations.length} conversations`,
+      );
     } catch (error) {
       console.error('Error auto-joining rooms for user:', userId, error);
     }
@@ -151,16 +152,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // channel subcriptions
   @SubscribeMessage('join-channel')
-  async handleJoinChannel (
+  async handleJoinChannel(
     @ConnectedSocket() client: Socket,
     @MessageBody('channelId') channelId: string,
   ) {
     const userId = client.data.user.sub;
-    if(!channelId) {
+    if (!channelId) {
       return client.emit('error', { message: 'Channel ID is required' });
     }
     try {
-      const channel = await this.channelService.getChannelById(BigInt(channelId));
+      const channel = await this.channelService.getChannelById(
+        BigInt(channelId),
+      );
       if (!channel) {
         return client.emit('error', { message: 'Channel not found' });
       }
@@ -168,11 +171,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.join(`channel-${channelId}`);
       console.log(`User ${userId} joined channel ${channelId}`);
 
-      this.server.to(`channel-${channelId}`).emit('joined-channel', { 
+      this.server.to(`channel-${channelId}`).emit('joined-channel', {
         userId,
         channelId,
         timestamp: new Date(),
-       });
+      });
     } catch (error) {
       console.error('Error joining channel:', error);
       client.emit('error', { message: 'Failed to join channel' });
@@ -180,12 +183,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('leave-channel')
-  async handleLeaveChannel (
+  async handleLeaveChannel(
     @ConnectedSocket() client: Socket,
     @MessageBody('channelId') channelId: string,
   ) {
     const userId = client.data.user.sub;
-    if(!channelId) {
+    if (!channelId) {
       return client.emit('error', { message: 'Channel ID is required' });
     }
 
@@ -196,36 +199,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       userId,
       channelId,
       timestamp: new Date(),
-     });
+    });
   }
 
   // channel messaging
   @SubscribeMessage('send-channel-message')
   async handleSendChannelMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { channelId: string; content: string; isEncrypted?: boolean },
+    @MessageBody()
+    payload: { channelId: string; content: string; isEncrypted?: boolean },
   ) {
     const senderId = client.data.user.sub;
-    if(!payload.channelId || !payload.content) {
-      return client.emit('error', { message: 'Channel ID and content are required' });
+    if (!payload.channelId || !payload.content) {
+      return client.emit('error', {
+        message: 'Channel ID and content are required',
+      });
     }
 
-    try  {
+    try {
       const message = await this.channelService.sendMessage(
-        BigInt(payload.channelId),  
+        BigInt(payload.channelId),
         BigInt(senderId),
         payload.content,
         payload.isEncrypted ?? false,
       );
 
-      this.server.to(`channel-${payload.channelId}`).emit('new-channel-message', {
-        id: message.id,
-        channelId: payload.channelId,
-        senderId,
-        content: message.content,
-        isEncrypted: message.isEncrypted,
-        createdAt: message.createdAt,
-      });
+      this.server
+        .to(`channel-${payload.channelId}`)
+        .emit('new-channel-message', {
+          id: message.id,
+          channelId: payload.channelId,
+          senderId,
+          content: message.content,
+          isEncrypted: message.isEncrypted,
+          createdAt: message.createdAt,
+        });
     } catch (error: any) {
       console.error('Error sending channel message:', error);
       client.emit('error', { message: 'Failed to send message' });
@@ -235,27 +243,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('edit-channel-message')
   async handleEditChannelMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { channelId: string; messageId: string; newContent: string },
+    @MessageBody()
+    payload: { channelId: string; messageId: string; newContent: string },
   ) {
     const editorId = client.data.user.sub;
-    if(!payload.channelId || !payload.newContent) {
-      return client.emit('error', { message: 'Channel ID and new content are required' });
+    if (!payload.channelId || !payload.newContent) {
+      return client.emit('error', {
+        message: 'Channel ID and new content are required',
+      });
     }
 
     try {
       const message = await this.channelService.editMessage(
         BigInt(payload.messageId),
-        BigInt(editorId), 
+        BigInt(editorId),
         payload.newContent,
       );
 
-      this.server.to(`channel-${payload.channelId}`).emit('edited-channel-message', {
-        id: message.id,
-        channelId: payload.channelId,
-        newContent: message.content,
-        isEdited: message.isEdited,
-        updatedAt: message.updatedAt,
-      });
+      this.server
+        .to(`channel-${payload.channelId}`)
+        .emit('edited-channel-message', {
+          id: message.id,
+          channelId: payload.channelId,
+          newContent: message.content,
+          isEdited: message.isEdited,
+          updatedAt: message.updatedAt,
+        });
     } catch (error: any) {
       console.error('Error editing channel message:', error);
       client.emit('error', { message: 'Failed to edit message' });
@@ -268,7 +281,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { channelId: string; messageId: string },
   ) {
     const requesterId = client.data.user.sub;
-    if(!payload.channelId) {
+    if (!payload.channelId) {
       return client.emit('error', { message: 'Channel ID is required' });
     }
 
@@ -278,10 +291,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         BigInt(requesterId),
       );
 
-      this.server.to(`channel-${payload.channelId}`).emit('deleted-channel-message', {
-        id: payload.messageId,
-        channelId: payload.channelId,
-      });
+      this.server
+        .to(`channel-${payload.channelId}`)
+        .emit('deleted-channel-message', {
+          id: payload.messageId,
+          channelId: payload.channelId,
+        });
     } catch (error: any) {
       console.error('Error deleting channel message:', error);
       client.emit('error', { message: 'Failed to delete message' });
@@ -295,7 +310,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('conversationId') conversationId: string,
   ) {
     const userId = client.data.user.sub;
-    if(!conversationId) {
+    if (!conversationId) {
       return client.emit('error', { message: 'Conversation ID is required' });
     }
 
@@ -303,11 +318,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.join(`conversation-${conversationId}`);
       console.log(`User ${userId} joined conversation ${conversationId}`);
 
-      this.server.to(`conversation-${conversationId}`).emit('joined-conversation', {
-        userId,
-        conversationId,
-        timestamp: new Date(),
-      });
+      this.server
+        .to(`conversation-${conversationId}`)
+        .emit('joined-conversation', {
+          userId,
+          conversationId,
+          timestamp: new Date(),
+        });
     } catch (error: any) {
       console.error('Error joining conversation:', error);
       client.emit('error', { message: 'Failed to join conversation' });
@@ -320,7 +337,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('conversationId') conversationId: string,
   ) {
     const userId = client.data.user.sub;
-    if(!conversationId) {
+    if (!conversationId) {
       return client.emit('error', { message: 'Conversation ID is required' });
     }
 
@@ -338,12 +355,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('send-conversation-message')
   async handleSendConversationMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { conversationId: string; content: string; isEncrypted?: boolean },
+    @MessageBody()
+    payload: { conversationId: string; content: string; isEncrypted?: boolean },
   ) {
     const senderId = client.data.user.sub;
 
-    if(!payload.conversationId || !payload.content) {
-      return client.emit('error', { message: 'Conversation ID and content are required' });
+    if (!payload.conversationId || !payload.content) {
+      return client.emit('error', {
+        message: 'Conversation ID and content are required',
+      });
     }
 
     try {
@@ -354,14 +374,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         payload.isEncrypted ?? false,
       );
 
-      this.server.to(`conversation-${payload.conversationId}`).emit('new-conversation-message', {
-        id: message.id,
-        conversationId: payload.conversationId,
-        senderId,
-        content: message.content,
-        isEncrypted: message.isEncrypted,
-        createdAt: message.createdAt,
-      });
+      this.server
+        .to(`conversation-${payload.conversationId}`)
+        .emit('new-conversation-message', {
+          id: message.id,
+          conversationId: payload.conversationId,
+          senderId,
+          content: message.content,
+          isEncrypted: message.isEncrypted,
+          createdAt: message.createdAt,
+        });
     } catch (error: any) {
       console.error('Error sending conversation message:', error);
       client.emit('error', { message: 'Failed to send message' });
@@ -371,11 +393,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('edit-conversation-message')
   async handleEditConversationMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { conversationId: string; messageId: string; newContent: string },
+    @MessageBody()
+    payload: { conversationId: string; messageId: string; newContent: string },
   ) {
     const editorId = client.data.user.sub;
-    if(!payload.conversationId || !payload.newContent) {
-      return client.emit('error', { message: 'Conversation ID and new content are required' });
+    if (!payload.conversationId || !payload.newContent) {
+      return client.emit('error', {
+        message: 'Conversation ID and new content are required',
+      });
     }
 
     try {
@@ -385,13 +410,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         payload.newContent,
       );
 
-      this.server.to(`conversation-${payload.conversationId}`).emit('edited-conversation-message', {
-        id: message.id,
-        conversationId: payload.conversationId,
-        newContent: message.content,
-        isEdited: message.isEdited,
-        updatedAt: message.updatedAt,
-      });
+      this.server
+        .to(`conversation-${payload.conversationId}`)
+        .emit('edited-conversation-message', {
+          id: message.id,
+          conversationId: payload.conversationId,
+          newContent: message.content,
+          isEdited: message.isEdited,
+          updatedAt: message.updatedAt,
+        });
     } catch (error: any) {
       console.error('Error editing conversation message:', error);
       client.emit('error', { message: 'Failed to edit message' });
@@ -404,18 +431,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { conversationId: string; messageId: string },
   ) {
     const requesterId = client.data.user.sub;
-    if(!payload.conversationId) {
+    if (!payload.conversationId) {
       return client.emit('error', { message: 'Conversation ID is required' });
     }
-    try{
+    try {
       await this.conversationService.deleteMessage(
         BigInt(payload.messageId),
         BigInt(requesterId),
       );
-      this.server.to(`conversation-${payload.conversationId}`).emit('deleted-conversation-message', {
-        id: payload.messageId,
-        conversationId: payload.conversationId,
-      });
+      this.server
+        .to(`conversation-${payload.conversationId}`)
+        .emit('deleted-conversation-message', {
+          id: payload.messageId,
+          conversationId: payload.conversationId,
+        });
     } catch (error: any) {
       console.error('Error deleting conversation message:', error);
       client.emit('error', { message: 'Failed to delete message' });
@@ -426,20 +455,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('typing')
   async handleTyping(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { conversationId: string; channelId: string;isTyping: boolean },
+    @MessageBody()
+    payload: { conversationId: string; channelId: string; isTyping: boolean },
   ) {
     const userId = client.data.user.sub;
     const roomId = payload.conversationId || payload.channelId;
     const roomType = payload.conversationId ? 'conversation' : 'channel';
 
-    if(!roomId) {
-      return client.emit('error', { message: 'Conversation ID or Channel ID is required' });
+    if (!roomId) {
+      return client.emit('error', {
+        message: 'Conversation ID or Channel ID is required',
+      });
     }
 
     const key = `typing:${roomType}:${roomId}:${userId}`;
 
-    if(payload.isTyping) {
-      await this.redis.setex(key,3, 'true');
+    if (payload.isTyping) {
+      await this.redis.setex(key, 3, 'true');
       client.to(`${roomType}-${roomId}`).emit('typing', {
         userId,
         roomId,
@@ -461,22 +493,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('mark-channel-message-read')
   async handleMarkChannelMessageRead(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { channelId: string; messageId: string }
+    @MessageBody() payload: { channelId: string; messageId: string },
   ) {
     const userId = client.data.user.sub;
-    if(!payload.channelId || !payload.messageId) {
-      return client.emit('error', { message: 'Channel ID and Message ID are required' });
+    if (!payload.channelId || !payload.messageId) {
+      return client.emit('error', {
+        message: 'Channel ID and Message ID are required',
+      });
     }
 
     try {
-      await this.chatService.markChannelMessageRead(BigInt(payload.messageId), BigInt(userId));
+      await this.chatService.markChannelMessageRead(
+        BigInt(payload.messageId),
+        BigInt(userId),
+      );
 
-      this.server.to(`channel-${payload.channelId}`).emit('channel-message-read', {
-        messageId: payload.messageId,
-        channelId: payload.channelId,
-        userId,
-        readAt: new Date(),
-      });
+      this.server
+        .to(`channel-${payload.channelId}`)
+        .emit('channel-message-read', {
+          messageId: payload.messageId,
+          channelId: payload.channelId,
+          userId,
+          readAt: new Date(),
+        });
     } catch (error: any) {
       console.error('Error marking channel message as read:', error);
       client.emit('error', { message: 'Failed to mark message as read' });
@@ -486,22 +525,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('mark-conversation-message-read')
   async handleMarkConversationMessageRead(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { conversationId: string; messageId: string }
+    @MessageBody() payload: { conversationId: string; messageId: string },
   ) {
     const userId = client.data.user.sub;
-    if(!payload.conversationId || !payload.messageId) {
-      return client.emit('error', { message: 'Conversation ID and Message ID are required' });
+    if (!payload.conversationId || !payload.messageId) {
+      return client.emit('error', {
+        message: 'Conversation ID and Message ID are required',
+      });
     }
 
     try {
-      await this.chatService.markConversationMessageRead(BigInt(payload.messageId), BigInt(userId));
+      await this.chatService.markConversationMessageRead(
+        BigInt(payload.messageId),
+        BigInt(userId),
+      );
 
-      this.server.to(`conversation-${payload.conversationId}`).emit('conversation-message-read', {
-        messageId: payload.messageId,
-        conversationId: payload.conversationId,
-        userId,
-        readAt: new Date(),
-      });
+      this.server
+        .to(`conversation-${payload.conversationId}`)
+        .emit('conversation-message-read', {
+          messageId: payload.messageId,
+          conversationId: payload.conversationId,
+          userId,
+          readAt: new Date(),
+        });
     } catch (error: any) {
       console.error('Error marking conversation message as read:', error);
       client.emit('error', { message: 'Failed to mark message as read' });
@@ -512,7 +558,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('add-channel-reaction')
   async handleAddChannelReaction(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { channelId: string; messageId: string; emoji: string }
+    @MessageBody()
+    payload: { channelId: string; messageId: string; emoji: string },
   ) {
     const userId = client.data.user.sub;
     try {
@@ -521,12 +568,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         BigInt(userId),
         payload.emoji,
       );
-      this.server.to(`channel-${payload.channelId}`).emit('channel-reaction-added', {
-        messageId: payload.messageId,
-        channelId: payload.channelId,
-        userId,
-        emoji: payload.emoji,
-      });
+      this.server
+        .to(`channel-${payload.channelId}`)
+        .emit('channel-reaction-added', {
+          messageId: payload.messageId,
+          channelId: payload.channelId,
+          userId,
+          emoji: payload.emoji,
+        });
     } catch (error) {
       client.emit('error', { message: 'Failed to add reaction' });
     }
@@ -535,7 +584,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('remove-channel-reaction')
   async handleRemoveChannelReaction(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { channelId: string; messageId: string; emoji: string }
+    @MessageBody()
+    payload: { channelId: string; messageId: string; emoji: string },
   ) {
     const userId = client.data.user.sub;
     try {
@@ -544,12 +594,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         BigInt(userId),
         payload.emoji,
       );
-      this.server.to(`channel-${payload.channelId}`).emit('channel-reaction-removed', {
-        messageId: payload.messageId,
-        channelId: payload.channelId,
-        userId,
-        emoji: payload.emoji,
-      });
+      this.server
+        .to(`channel-${payload.channelId}`)
+        .emit('channel-reaction-removed', {
+          messageId: payload.messageId,
+          channelId: payload.channelId,
+          userId,
+          emoji: payload.emoji,
+        });
     } catch (error) {
       client.emit('error', { message: 'Failed to remove reaction' });
     }
@@ -558,7 +610,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('add-conversation-reaction')
   async handleAddConversationReaction(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { conversationId: string; messageId: string; emoji: string }
+    @MessageBody()
+    payload: { conversationId: string; messageId: string; emoji: string },
   ) {
     const userId = client.data.user.sub;
     try {
@@ -567,12 +620,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         BigInt(userId),
         payload.emoji,
       );
-      this.server.to(`conversation-${payload.conversationId}`).emit('conversation-reaction-added', {
-        messageId: payload.messageId,
-        conversationId: payload.conversationId,
-        userId,
-        emoji: payload.emoji,
-      });
+      this.server
+        .to(`conversation-${payload.conversationId}`)
+        .emit('conversation-reaction-added', {
+          messageId: payload.messageId,
+          conversationId: payload.conversationId,
+          userId,
+          emoji: payload.emoji,
+        });
     } catch (error) {
       client.emit('error', { message: 'Failed to add reaction' });
     }
@@ -581,7 +636,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('remove-conversation-reaction')
   async handleRemoveConversationReaction(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { conversationId: string; messageId: string; emoji: string }
+    @MessageBody()
+    payload: { conversationId: string; messageId: string; emoji: string },
   ) {
     const userId = client.data.user.sub;
     try {
@@ -590,12 +646,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         BigInt(userId),
         payload.emoji,
       );
-      this.server.to(`conversation-${payload.conversationId}`).emit('conversation-reaction-removed', {
-        messageId: payload.messageId,
-        conversationId: payload.conversationId,
-        userId,
-        emoji: payload.emoji,
-      });
+      this.server
+        .to(`conversation-${payload.conversationId}`)
+        .emit('conversation-reaction-removed', {
+          messageId: payload.messageId,
+          conversationId: payload.conversationId,
+          userId,
+          emoji: payload.emoji,
+        });
     } catch (error) {
       client.emit('error', { message: 'Failed to remove reaction' });
     }

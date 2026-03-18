@@ -8,7 +8,10 @@ export class UpdateChannelDto {
   @MaxLength(50)
   name?: string;
 
-  @ApiProperty({ description: 'The new description of the channel', required: false })
+  @ApiProperty({
+    description: 'The new description of the channel',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(200)

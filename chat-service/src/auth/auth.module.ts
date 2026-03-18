@@ -13,7 +13,7 @@ import { JwtAuthGuard } from './Jwt.Auth.guard';
       signOptions: { expiresIn: '1h' },
     }),
   ],
-  providers: [JwtStrategy,JwtAuthGuard, AuthServiceClient],
+  providers: [JwtStrategy, JwtAuthGuard, AuthServiceClient],
   exports: [JwtModule, JwtAuthGuard, AuthServiceClient],
 })
 export class AuthModule {}
