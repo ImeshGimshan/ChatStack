@@ -27,6 +27,7 @@ interface Props {
   onSettings?: () => void;
   onLogout?: () => void;
   onSearch?: () => void;
+  onProfile?: () => void;
   userProfile?: {
     username?: string;
     avatarUrl?: string;
@@ -46,6 +47,7 @@ export default function ServerBar({
   onSettings,
   onLogout,
   onSearch,
+  onProfile,
   userProfile
 }: Props) {
   const [newName, setNewName] = useState('');
@@ -235,7 +237,7 @@ export default function ServerBar({
           <div className="mt-2 flex items-center justify-center">
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-0.5 cursor-pointer rounded-full hover:bg-primary/20 transition-colors">
+                <div onClick={onProfile} className="p-0.5 cursor-pointer rounded-full hover:bg-primary/20 transition-colors">
                   <Avatar className="h-11 w-11 border-2 border-transparent hover:border-primary transition-all">
                     <AvatarImage src={userProfile?.avatarUrl} />
                     <AvatarFallback className="bg-surface text-sm font-bold text-foreground">

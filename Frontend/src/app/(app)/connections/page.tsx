@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, UserPlus, UserMinus, Check, X, Users, Search, ArrowRight, FileQuestion } from "lucide-react";
+import { Loader2, UserPlus, UserMinus, Check, X, Users, Search, ArrowRight, ArrowLeft, FileQuestion } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -111,43 +111,54 @@ export default function ConnectionsPage() {
 
   return (
     <div className="h-full overflow-y-auto w-full">
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Social Network</h1>
-        <p className="text-muted-foreground">Manage your connections and pending requests.</p>
+      <div className="max-w-[1400px] mx-auto p-6 md:p-10 space-y-8 w-full">
+        <div className="flex items-center gap-5">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-12 w-12 rounded-full bg-black/50 border border-white/10 hover:bg-white/10 hover:border-white/20 text-zinc-400 hover:text-white transition-all duration-300 shadow-sm shrink-0"
+            onClick={() => router.push('/chat')}
+            title="Back to Chat"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight drop-shadow-electric-glow tracking-wider">Social Network</h1>
+            <p className="text-zinc-400 mt-2 font-medium">Manage your connections and pending requests.</p>
+          </div>
       </div>
 
       <Tabs defaultValue="connections" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
-          <TabsTrigger value="connections">Connections ({connections.length})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({pending.length})</TabsTrigger>
-          <TabsTrigger value="discover">Discover</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 h-14 bg-black/40 border border-white/10 rounded-2xl p-1 backdrop-blur-xl">
+          <TabsTrigger value="connections" className="rounded-xl data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300 data-[state=active]:shadow-none text-zinc-400">Connections ({connections.length})</TabsTrigger>
+          <TabsTrigger value="pending" className="rounded-xl data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300 data-[state=active]:shadow-none text-zinc-400">Pending ({pending.length})</TabsTrigger>
+          <TabsTrigger value="discover" className="rounded-xl data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-300 data-[state=active]:shadow-none text-zinc-400">Discover</TabsTrigger>
         </TabsList>
 
         <TabsContent value="connections" className="mt-6">
           {connections.length === 0 ? (
-            <div className="text-center py-20 border border-dashed rounded-2xl">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground opacity-20 mb-4" />
-              <p className="text-muted-foreground">No connections yet. Start exploring!</p>
+            <div className="text-center py-20 border border-white/10 bg-black/20 rounded-2xl backdrop-blur-sm">
+              <Users className="h-12 w-12 mx-auto text-zinc-600 opacity-50 mb-4" />
+              <p className="text-zinc-400 text-lg font-medium">No connections yet. Start exploring!</p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-4">
               {connections.map((user) => (
                 <motion.div 
                   key={user.id}
                   layout
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex items-center justify-between p-4 bg-card border rounded-xl"
+                  className="flex items-center justify-between p-5 bg-black/50 border border-white/10 rounded-2xl backdrop-blur-xl hover:border-indigo-500/30 transition-all duration-300 hover:shadow-[0_4px_20px_-4px_rgba(99,102,241,0.1)]"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <Avatar>
                       <AvatarImage src={user.profile?.avatarUrl} />
                       <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className="font-bold truncate">{user.profile?.displayName || user.username}</p>
-                      <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
+                      <p className="font-bold text-white text-base tracking-wide truncate">{user.profile?.displayName || user.username}</p>
+                      <p className="text-sm text-zinc-500 font-medium truncate">@{user.username}</p>
                     </div>
                   </div>
                   <Button 
@@ -167,9 +178,9 @@ export default function ConnectionsPage() {
 
         <TabsContent value="pending" className="mt-6">
           {pending.length === 0 ? (
-            <div className="text-center py-20 border border-dashed rounded-2xl">
-              <UserPlus className="h-12 w-12 mx-auto text-muted-foreground opacity-20 mb-4" />
-              <p className="text-muted-foreground">No pending requests.</p>
+            <div className="text-center py-20 border border-white/10 bg-black/20 rounded-2xl backdrop-blur-sm">
+              <UserPlus className="h-12 w-12 mx-auto text-zinc-600 opacity-50 mb-4" />
+              <p className="text-zinc-400 text-lg font-medium">No pending requests.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -179,16 +190,16 @@ export default function ConnectionsPage() {
                   layout
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex items-center justify-between p-4 bg-card border rounded-xl"
+                  className="flex items-center justify-between p-5 bg-black/50 border border-white/10 rounded-2xl backdrop-blur-xl hover:border-indigo-500/30 transition-all duration-300 hover:shadow-[0_4px_20px_-4px_rgba(99,102,241,0.1)]"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <Avatar>
                       <AvatarImage src={request.requester?.profile?.avatarUrl} />
                       <AvatarFallback>{request.requester?.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-bold">{request.requester?.profile?.displayName || request.requester?.username}</p>
-                      <p className="text-xs text-muted-foreground">Sent a connection request</p>
+                      <p className="font-bold text-white text-base tracking-wide">{request.requester?.profile?.displayName || request.requester?.username}</p>
+                      <p className="text-sm text-zinc-500 font-medium">Sent a connection request</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -217,17 +228,17 @@ export default function ConnectionsPage() {
 
         <TabsContent value="discover" className="mt-6">
           <form onSubmit={handleSearch} className="mb-8">
-            <div className="flex gap-2">
+            <div className="flex gap-3 items-center">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
                 <Input
                   placeholder="Search users by username..."
-                  className="pl-10 h-12"
+                  className="pl-11 h-12 bg-black/50 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 focus-visible:border-indigo-500/50 placeholder:text-zinc-600 shadow-inner text-base"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="h-12 px-6" disabled={isSearching || !searchQuery.trim()}>
+              <Button type="submit" className="h-12 px-6 rounded-xl border border-indigo-300/35 bg-linear-to-r from-indigo-500 via-indigo-600 to-blue-500 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 hover:from-indigo-400 hover:via-indigo-500 hover:to-blue-400 hover:shadow-[0_0_16px_rgba(99,102,241,0.5)]" disabled={isSearching || !searchQuery.trim()}>
                 {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : "Search"}
               </Button>
             </div>
@@ -236,12 +247,12 @@ export default function ConnectionsPage() {
           {isSearching ? (
              <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
           ) : hasSearched && searchResults.length === 0 ? (
-             <div className="text-center py-12 border border-dashed rounded-xl">
-               <FileQuestion className="h-12 w-12 mx-auto text-muted-foreground opacity-20 mb-4" />
-               <p className="text-muted-foreground">No users found matching "{searchQuery}"</p>
+             <div className="text-center py-12 border border-white/5 bg-black/20 rounded-2xl backdrop-blur-sm">
+               <FileQuestion className="h-12 w-12 mx-auto text-zinc-600 opacity-50 mb-4" />
+               <p className="text-zinc-400 text-lg font-medium">No users found matching matching "{searchQuery}"quot;{searchQuery}matching "{searchQuery}"quot;</p>
              </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-4">
               {searchResults.map((profile) => {
                 const searchId = profile.userId || (profile as any).id;
                 return (
@@ -250,24 +261,25 @@ export default function ConnectionsPage() {
                   layout 
                   initial={{ opacity: 0 }} 
                   animate={{ opacity: 1 }}
-                  className="flex items-center justify-between p-4 bg-card border rounded-xl hover:border-primary/50 transition-colors"
+                  className="flex items-center justify-between p-5 bg-black/50 border border-white/10 rounded-2xl backdrop-blur-xl hover:border-indigo-500/50 transition-all duration-300 hover:shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)]"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push(`/profile/${searchId}`)}>
                       <AvatarImage src={profile.avatarUrl} />
                       <AvatarFallback>{profile.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <p 
-                        className="font-bold cursor-pointer hover:underline"
+                        className="font-bold text-white text-base tracking-wide cursor-pointer hover:text-indigo-300 transition-colors hover:underline"
                         onClick={() => router.push(`/profile/${searchId}`)}
                       >
                         {profile.username}
                       </p>
-                      <p className="text-xs text-muted-foreground">@{profile.username}</p>
+                      <p className="text-sm text-zinc-500 font-medium">@{profile.username}</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => router.push(`/profile/${searchId}`)}>
+                  <Button 
+                    variant="outline" size="sm" className="h-9 px-4 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 hover:text-white transition-colors" onClick={() => router.push(`/profile/${searchId}`)}>
                     View <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
                 </motion.div>

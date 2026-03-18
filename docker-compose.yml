@@ -42,6 +42,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - CHAT_DATABASE_URL=${CHAT_DATABASE_URL}
       - AUTH_SERVICE_URL=http://auth-service:8080
+      - SOCIAL_SERVICE_URL=http://social-service:3334
       - REDIS_URL=${REDIS_URL}
     depends_on:
       - auth-service

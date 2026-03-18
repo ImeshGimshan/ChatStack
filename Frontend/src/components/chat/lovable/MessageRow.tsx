@@ -30,6 +30,36 @@ export default function MessageRow({
   const hasReadReceipts = readReceipts && readReceipts.length > 0;
   const isReadByOther = hasReadReceipts && readReceipts.some(r => r.userId !== currentUserId);
 
+  // Generate a consistent random color based on senderName
+  const colors = [
+    'text-red-400',
+    'text-orange-400',
+    'text-amber-400',
+    'text-yellow-400',
+    'text-lime-400',
+    'text-green-400',
+    'text-emerald-400',
+    'text-teal-400',
+    'text-cyan-400',
+    'text-sky-400',
+    'text-blue-400',
+    'text-violet-400',
+    'text-fuchsia-400',
+    'text-pink-400',
+    'text-rose-400'
+  ];
+  
+  const getColorForName = (name) => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  const senderColor = isOwn ? 'text-primary' : getColorForName(senderName);
+
   // Group reactions by emoji and check if current user reacted
   const reactionsByEmoji = reactions?.reduce((acc, r) => {
     if (!acc[r.emoji]) acc[r.emoji] = { count: 0, me: false };
@@ -47,7 +77,7 @@ export default function MessageRow({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`text-[13px] font-semibold ${isOwn ? 'text-primary' : 'text-foreground'}`}>
+          <span className={`text-[13px] font-semibold ${senderColor}`}>
             {senderName}
           </span>
           <span className="text-[11px] text-muted-foreground/50 font-mono">{time}</span>

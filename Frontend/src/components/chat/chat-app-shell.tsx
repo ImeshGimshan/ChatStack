@@ -532,6 +532,17 @@ export function ChatAppShell() {
         return;
       }
 
+      const currentUserId = user?.id ? String(user.id) : "";
+      if (nextMessage.senderId !== currentUserId) {
+        // Automatically mark as read if we are viewing the active channel
+        if (socket.connected) {
+          socket.emit("mark-channel-message-read", {
+            channelId: nextMessage.channelId,
+            messageId: nextMessage.id
+          });
+        }
+      }
+
       setMessages((prev) => {
         if (prev.some((message) => message.id === nextMessage.id)) {
           return prev;
@@ -636,6 +647,17 @@ export function ChatAppShell() {
             );
           }
           return;
+        }
+
+        const currentUserIdActive = user?.id ? String(user.id) : "";
+        if (nextMessage.senderId !== currentUserIdActive) {
+          // Automatically mark as read if we are viewing the active conversation
+          if (socket.connected) {
+            socket.emit("mark-conversation-message-read", {
+              conversationId: nextMessage.conversationId,
+              messageId: nextMessage.id
+            });
+          }
         }
 
         setConversationMessages((prev) => {
@@ -1665,6 +1687,7 @@ export function ChatAppShell() {
             router.replace("/");
           }}
           onSearch={() => toast.info("Global search coming soon!")}
+          onProfile={() => router.push("/profile/me")}
           userProfile={{
             username: profile.username,
             avatarUrl: profile.avatarUrl

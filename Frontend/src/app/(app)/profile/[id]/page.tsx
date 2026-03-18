@@ -139,7 +139,7 @@ export default function UserProfilePage() {
           <div className="absolute left-[20%] top-0 h-[40%] w-[50%] rounded-[100%] bg-indigo-500/10 blur-[100px]" />
         </div>
 
-        <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="relative z-10 mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-xl">
             {/* Header Banner */}
             <div className="h-32 bg-linear-to-r from-indigo-500/30 via-cyan-500/20 to-indigo-500/30 sm:h-48" />
