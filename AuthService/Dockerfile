@@ -1,38 +1,37 @@
-#Use an image with JDK to build the app
-FROM eclipse-temurin:17-jdk-alpine as build
+# ── Build stage ──────────────────────────────
+FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
 
-#Copy maven files and download dependencies
+# Copy Maven wrapper & pom first (dependency caching)
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 
-# Fix line endings and make mvnw executable
-RUN dos2unix mvnw || sed -i 's/\r$//' mvnw
-RUN chmod +x mvnw
+# Fix Windows line endings & make executable
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
 
-#cache dependencies offline
-RUN ./mvnw dependency:go-offline
+# Download dependencies (cached layer)
+RUN ./mvnw dependency:go-offline -B
 
-#Copy source and build the jar
+# Copy source and build
 COPY src ./src
-RUN ./mvnw clean package -DskipTests
+RUN ./mvnw clean package -DskipTests -B
 
-# Final tiny image to run the app
+# ── Runtime stage ────────────────────────────
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-#create non-root user and group
-RUN addgroup -S spring && adduser -S spring -G spring
+# Add non-root user
+RUN addgroup -g 1001 -S appuser && \
+    adduser -S appuser -u 1001
 
-#copy the build artifact and set permissions
 COPY --from=build /app/target/*.jar app.jar
+RUN chown appuser:appuser app.jar
 
-#change ownership to the non-root user
-RUN chown spring:spring app.jar
-
-#switch to non-root user
-USER spring:spring
-
+USER appuser
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-XX:InitialRAMPercentage=50.0", "-jar", "app.jar"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget -qO- http://localhost:8080/actuator/health || exit 1
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
