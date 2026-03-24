@@ -2,3 +2,13 @@ node_modules
 dist
 npm-debug.log
 .env
+.env.*
+.git
+.gitignore
+.idea
+.vscode
+*.md
+test
+coverage
+.prettierrc
+eslint.config.mjs
