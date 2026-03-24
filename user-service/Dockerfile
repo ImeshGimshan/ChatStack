@@ -1,4 +1,6 @@
+# ── Build stage (validate syntax) ────────────
 FROM node:20-alpine AS builder
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -6,20 +8,25 @@ RUN npm ci
 
 COPY . .
 
-RUN npm prune --omit=dev
-
+# ── Runtime stage ────────────────────────────
 FROM node:20-alpine
+
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
 COPY --from=builder /app/index.js ./
 COPY --from=builder /app/src ./src
 
-RUN chown -R node:node /app
-USER node
+# Add non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
+USER nodejs
 
 EXPOSE 5010
 

@@ -7,7 +7,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'https://chat-stack-azure.vercel.app',
+  origin: 'http://localhost:3000',
   credentials: false
 }));
 
@@ -67,7 +67,7 @@ app.use((req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('❌ Unhandled error:', err);
-  
+
   res.status(err.status || 500).json({
     error: err.name || 'Internal Server Error',
     message: err.message || 'An unexpected error occurred',
