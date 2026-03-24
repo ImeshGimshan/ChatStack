@@ -1,0 +1,399 @@
+# Deploy with:
+#   kubectl apply -f chatstack-secrets.yaml
+#   kubectl apply -f chatstack-config.yaml
+#   kubectl apply -f chatstack-cluster.yaml
+
+# 1. AUTH SERVICE (Spring Boot / Java 17) — port 8080
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-deployment
+  labels:
+    app: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: chatstackregistryv1.azurecr.io/chatstack-auth-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SPRING_DATASOURCE_URL
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SPRING_DATASOURCE_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SPRING_DATASOURCE_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: JWT_SECRET
+            - name: SPRING_RABBITMQ_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SPRING_RABBITMQ_HOST
+            - name: SPRING_RABBITMQ_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SPRING_RABBITMQ_PORT
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SPRING_RABBITMQ_USERNAME
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SPRING_RABBITMQ_PASSWORD
+            - name: SPRING_RABBITMQ_VIRTUAL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SPRING_RABBITMQ_VIRTUAL_HOST
+            - name: SPRING_RABBITMQ_SSL_ENABLED
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SPRING_RABBITMQ_SSL_ENABLED
+            - name: GMAIL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: GMAIL_USER
+            - name: GMAIL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: GMAIL_PASS
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+spec:
+  type: NodePort
+  selector:
+    app: auth-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
+
+# 2. CHAT SERVICE (NestJS + Prisma) — port 3333
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-deployment
+  labels:
+    app: chat-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chat-service
+  template:
+    metadata:
+      labels:
+        app: chat-service
+    spec:
+      containers:
+        - name: chat-service
+          image: chatstackregistryv1.azurecr.io/chatstack-chat-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3333
+          env:
+            - name: PORT
+              value: "3333"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: JWT_SECRET
+            - name: CHAT_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: CHAT_DATABASE_URL
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: CHAT_DATABASE_URL
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: chatstack-config
+                  key: AUTH_SERVICE_URL
+            - name: SOCIAL_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: chatstack-config
+                  key: SOCIAL_SERVICE_URL
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: REDIS_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service
+spec:
+  type: NodePort
+  selector:
+    app: chat-service
+  ports:
+    - port: 3333
+      targetPort: 3333
+      nodePort: 30333
+
+# 3. SOCIAL SERVICE (NestJS + Prisma) — port 3334
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: social-deployment
+  labels:
+    app: social-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: social-service
+  template:
+    metadata:
+      labels:
+        app: social-service
+    spec:
+      containers:
+        - name: social-service
+          image: chatstackregistryv1.azurecr.io/chatstack-social-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3334
+          env:
+            - name: PORT
+              value: "3334"
+            - name: SOCIAL_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SOCIAL_DATABASE_URL
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: SOCIAL_DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: JWT_SECRET
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: social-service
+spec:
+  type: NodePort
+  selector:
+    app: social-service
+  ports:
+    - port: 3334
+      targetPort: 3334
+      nodePort: 30334
+
+# 4. MEDIA SERVICE (NestJS + Cloudinary) — port 3004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: media-deployment
+  labels:
+    app: media-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: media-service
+  template:
+    metadata:
+      labels:
+        app: media-service
+    spec:
+      containers:
+        - name: media-service
+          image: chatstackregistryv1.azurecr.io/chatstack-media-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3004
+          env:
+            - name: PORT
+              value: "3004"
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: CLOUDINARY_CLOUD_NAME
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: CLOUDINARY_API_KEY
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: CLOUDINARY_API_SECRET
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: media-service
+spec:
+  type: NodePort
+  selector:
+    app: media-service
+  ports:
+    - port: 3004
+      targetPort: 3004
+      nodePort: 30004
+
+# 5. EMAIL SERVICE (NestJS + RabbitMQ) — no external port
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-deployment
+  labels:
+    app: email-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: email-service
+  template:
+    metadata:
+      labels:
+        app: email-service
+    spec:
+      containers:
+        - name: email-service
+          image: chatstackregistryv1.azurecr.io/chatstack-email-service:latest
+          imagePullPolicy: Always
+          env:
+            - name: RABBIT_MQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: RABBIT_MQ_URL
+            - name: GMAIL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: GMAIL_PASS
+            - name: GMAIL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: GMAIL_USER
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: email-service
+spec:
+  type: ClusterIP
+  selector:
+    app: email-service
+  ports:
+    - port: 3000
+      targetPort: 3000
+
+# 6. USER SERVICE (Express.js + MongoDB) — port 5010
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-deployment
+  labels:
+    app: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: chatstackregistryv1.azurecr.io/chatstack-user-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5010
+          env:
+            - name: PORT
+              value: "5010"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: MONGO_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: JWT_SECRET
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: chatstack-config
+                  key: AUTH_SERVICE_URL
+            - name: NODE_ENV
+              value: "production"
+            - name: CORS_ORIGIN
+              valueFrom:
+                secretKeyRef:
+                  name: chatstack-secrets
+                  key: CORS_ORIGIN
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  type: NodePort
+  selector:
+    app: user-service
+  ports:
+    - port: 5010
+      targetPort: 5010
+      nodePort: 30010

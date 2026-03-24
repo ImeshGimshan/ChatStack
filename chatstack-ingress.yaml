@@ -1,0 +1,141 @@
+# ChatStack Ingress — API Gateway
+# Routes all traffic through localhost:80 based on URL path
+#
+# First install NGINX Ingress Controller:
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.1/deploy/static/provider/cloud/deploy.yaml
+#
+# Then apply this file:
+#   kubectl apply -f chatstack-ingress.yaml
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chatstack-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://localhost:3000"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization, Accept"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # WebSocket support
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          # ── Auth Service (Spring Boot) ──────────────────
+          # Routes: /api/auth/*, /api/internal/*, /health, /actuator/*
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8080
+
+          - path: /api/internal
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8080
+
+          # ── Chat Service (NestJS — no global prefix) ────
+          # Controllers: server, chat, channels, posts, comments, conversation, keys
+          - path: /server
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 3333
+
+          - path: /chat
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 3333
+
+          - path: /channels
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 3333
+
+          - path: /posts
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 3333
+
+          - path: /comments
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 3333
+
+          - path: /conversation
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 3333
+
+          - path: /keys
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 3333
+
+          - path: /socket.io
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 3333
+
+          # ── Social Service (NestJS — prefix: /api) ──────
+          # Controller: /api/connection/*
+          - path: /api/connection
+            pathType: Prefix
+            backend:
+              service:
+                name: social-service
+                port:
+                  number: 3334
+
+          # ── Media Service (NestJS — no global prefix) ───
+          # Controller: /media/*
+          - path: /media
+            pathType: Prefix
+            backend:
+              service:
+                name: media-service
+                port:
+                  number: 3004
+
+          # ── User Service (Express) ──────────────────────
+          # Router: /api/profile/*
+          - path: /api/profile
+            pathType: Prefix
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 5010

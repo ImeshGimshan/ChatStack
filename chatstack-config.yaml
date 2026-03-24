@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chatstack-config
+data:
+  AUTH_SERVICE_URL: "http://auth-service:8080"
+  SOCIAL_SERVICE_URL: "http://social-service:3334"
