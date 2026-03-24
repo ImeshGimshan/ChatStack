@@ -8,8 +8,11 @@ on:
     branches: [main]
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: imeshgimshan/auth-service
+  ACR_REGISTRY: chatstackregistryv1.azurecr.io
+  IMAGE_NAME: chatstack-auth-service
+  AKS_RESOURCE_GROUP: chatstack-rg
+  AKS_CLUSTER_NAME: chatstack-aks
+  DEPLOYMENT_NAME: auth-deployment
 
 jobs:
   test:
@@ -42,18 +45,21 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
+
       - name: Wait for Postgres
         run: |
           until pg_isready -h localhost -p 5432; do
             echo "Waiting for postgres..."
             sleep 2
           done
+
       - name: Build and Test
         working-directory: ./AuthService
         run: |
@@ -72,6 +78,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
@@ -83,28 +90,32 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     needs: test
-    permissions:
-      contents: read
-      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v2
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to Azure Container Registry
+        run: az acr login --name chatstackregistryv1
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.ACR_REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=sha,prefix=sha-
             type=raw,value=latest
-      - name: Build and push Docker image
+
+      - name: Build and push Docker image to ACR
         uses: docker/build-push-action@v5
         with:
           context: ./AuthService
@@ -118,16 +129,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Log in to Azure
+        uses: azure/login@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Deploy to Amazon ECS
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      - name: Deploy to AKS (rolling restart)
         run: |
-          aws ecs update-service \
-            --cluster ${{ secrets.ECS_CLUSTER }} \
-            --service auth-service \
-            --force-new-deployment \
-            --region ${{ secrets.AWS_REGION }}
+          kubectl rollout restart deployment/${{ env.DEPLOYMENT_NAME }}
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} --timeout=120s

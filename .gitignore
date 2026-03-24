@@ -28,11 +28,25 @@ Frontend/build/
 
 # --- DevOps / Secrets ---
 .env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 docker-compose.override.yml
-env-examples/.env.auth-service
-env-examples/.env.chat-service
-env-examples/.env.email-service
-env-examples/.env.frontend
-env-examples/.env.media-service
-env-examples/.env.user-service
-env-examples/.env.social-service
+env-examples/
+
+# --- Kubernetes Secrets (NEVER commit) ---
+chatstack-secrets.yaml
+*-secrets.yaml
+*-secret.yaml
+
+# --- Node modules / dist (all services) ---
+**/node_modules/
+**/dist/
+**/build/
+
+# --- Misc sensitive ---
+*.pem
+*.key
+*.crt
