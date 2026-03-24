@@ -10,8 +10,8 @@ on:
 env:
   ACR_REGISTRY: chatstackregistryv1.azurecr.io
   IMAGE_NAME: chatstack-auth-service
-  AKS_RESOURCE_GROUP: chatstack-rg
-  AKS_CLUSTER_NAME: chatstack-aks
+  AKS_RESOURCE_GROUP: chatstack-cluster_group
+  AKS_CLUSTER_NAME: chatstack-cluster
   DEPLOYMENT_NAME: auth-deployment
 
 jobs:
