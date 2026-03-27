@@ -12,7 +12,8 @@ kind: Ingress
 metadata:
   name: chatstack-ingress
   annotations:
-    nginx.ingress.kubernetes.io/cors-allow-origin: "http://localhost:3000"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://chat-stack-azure.vercel.app, http://localhost:3000"
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization, Accept"
@@ -23,8 +24,13 @@ metadata:
     nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+      - "85.211.210.163.nip.io"
+      secretName: chatstack-tls
   rules:
-    - http:
+    - host: "85.211.210.163.nip.io"
+      http:
         paths:
           # ── Auth Service (Spring Boot) ──────────────────
           # Routes: /api/auth/*, /api/internal/*, /health, /actuator/*

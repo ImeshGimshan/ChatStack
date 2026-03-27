@@ -50,3 +50,9 @@ chatstack-secrets.yaml
 *.pem
 *.key
 *.crt
+
+# --- Data Files & Local Scripts ---
+*.csv
+anomaly-test.js
+chat-anomaly-test.js
+local.yaml
