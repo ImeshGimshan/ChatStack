@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Globe2, Lock, Plus, Shield, Unlock, Check, Pencil, Send, Smile, Trash2, X, Search, Menu } from "lucide-react";
+import { Globe2, Lock, Plus, Shield, Unlock, Check, Pencil, Send, Smile, Trash2, X, Search } from "lucide-react";
 import { SecondarySidebar } from "@/components/chat/secondary-sidebar";
 import { ServerSidebar } from "@/components/chat/server-sidebar";
 import ServerBar from "./lovable/ServerBar";
@@ -16,24 +16,24 @@ import { useAuth } from "@/contexts/auth-context";
 import { useSocket } from "@/hooks/use-socket";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-  return (
-    <div className="flex h-full w-full flex-col md:flex-row">
-      {/* Mobile top bar */}
-      <div className="md:hidden sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border min-h-[56px]">
-        <ChatTopBar />
-      </div>
-      {/* Sidebars and main chat area */}
-      <div className="flex flex-1 h-full w-full overflow-hidden">
-        {/* Server sidebar (mobile drawer) */}
-        <ServerSidebar />
-        {/* Conversation sidebar (mobile drawer) */}
-        <ConversationSidebar />
-        {/* Main chat area */}
-        <main className="flex-1 flex flex-col h-full w-full overflow-hidden gap-2 md:gap-4 pt-2 md:pt-0 pb-2 md:pb-0">
-          {children}
-        </main>
-      </div>
-    </div>
+import {
+  ChatChannel,
+  ChatConversation,
+  ChatMessage,
+  MessageReaction,
+  MessageReadReceipt,
+  ChatServer,
+  ConversationMessage,
+  addChannelReaction,
+  addConversationReaction,
+  createChannel,
+  createConversation,
+  createServer,
+  deleteChannel,
+  deleteChannelMessage,
+  deleteConversationMessage,
+  editChannelMessage,
+  editConversationMessage,
   getConversationMessages,
   getConversationReadReceipts,
   getConversationReactions,
@@ -91,7 +91,6 @@ export function ChatAppShell() {
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
   const [presenceByUser, setPresenceByUser] = useState<Record<string, boolean>>({});
   const [typingNotice, setTypingNotice] = useState<string | null>(null);
-  const [mobilePanel, setMobilePanel] = useState<"servers" | "rooms" | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [pendingDeleteMessageId, setPendingDeleteMessageId] = useState<string | null>(null);
@@ -1665,74 +1664,19 @@ export function ChatAppShell() {
     return palette[colorIndex];
   }
 
-  const roomSidebarContent = (
-    <AnimatePresence mode="wait">
-      {activeSection === "global" ? (
-        <motion.div
-          key="global-info"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex-1 p-4"
-        >
-          <h2 className="text-sm font-semibold mb-4">Discover</h2>
-          <p className="text-ui text-muted-foreground">Explore the global feed and connect with others.</p>
-        </motion.div>
-      ) : !activeServerId ? (
-        <ConversationSidebar
-          key="dms"
-          conversations={conversations.map(c => ({
-            ...c,
-            name: conversationTitles[c.id] || c.name
-          }))}
-          activeId={activeConversationId}
-          onSelect={(id) => {
-            stopTypingNow();
-            setActiveChannelId(null);
-            setActiveConversationId(id);
-            setMobilePanel(null);
-          }}
-          userId={user?.id ? String(user.id) : ""}
-          presenceByUser={presenceByUser}
-        />
-      ) : activeServer ? (
-        <ChannelSidebar
-          key={activeServer.id}
-          server={activeServer}
-          channels={channels}
-          activeChannelId={activeChannelId}
-          onSelectChannel={(id) => {
-            stopTypingNow();
-            setActiveConversationId(null);
-            setActiveChannelId(id);
-            setMobilePanel(null);
-          }}
-          onCreateChannel={handleCreateChannel}
-        />
-      ) : (
-        <div className="flex-1 flex items-center justify-center p-4">
-          <p className="text-ui text-muted-foreground text-center">Loading...</p>
-        </div>
-      )}
-    </AnimatePresence>
-  );
-
   return (
     <main className="h-svh flex overflow-hidden bg-background text-foreground">
       {/* 1. Server List Rail */}
-      <div className="hidden md:flex flex-col w-[72px] min-w-[72px] bg-card border-r border-border h-full">
+      <div className="flex flex-col w-[72px] min-w-[72px] bg-card border-r border-border h-full">
         <ServerBar
           servers={servers}
           activeServerId={activeServerId}
           activeSection={activeSection}
-          onSelectServer={(id) => {
-            setActiveServerId(id);
-            setMobilePanel(null);
-          }}
+          onSelectServer={setActiveServerId}
           onGlobalSection={() => setActiveSection("global")}
           onPersonalSection={() => {
             setActiveSection("personal");
             setActiveServerId(null);
-            setMobilePanel(null);
           }}
           onCreateServer={handleCreateServer}
           onFeed={() => router.push("/feed")}
@@ -1752,72 +1696,54 @@ export function ChatAppShell() {
       </div>
 
       {/* 2. Channel/Conversation Sidebar */}
-      <div className="hidden md:flex flex-col w-60 min-w-[240px] bg-sidebar border-r border-sidebar-border">
-        {roomSidebarContent}
+      <div className="flex flex-col w-60 min-w-[240px] bg-sidebar border-r border-sidebar-border">
+        <AnimatePresence mode="wait">
+          {activeSection === "global" ? (
+            <motion.div
+              key="global-info"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex-1 p-4"
+            >
+              <h2 className="text-sm font-semibold mb-4">Discover</h2>
+              <p className="text-ui text-muted-foreground">Explore the global feed and connect with others.</p>
+            </motion.div>
+          ) : !activeServerId ? (
+            <ConversationSidebar
+              key="dms"
+              conversations={conversations.map(c => ({
+                ...c,
+                name: conversationTitles[c.id] || c.name
+              }))}
+              activeId={activeConversationId}
+              onSelect={(id) => {
+                stopTypingNow();
+                setActiveChannelId(null);
+                setActiveConversationId(id);
+              }}
+              userId={user?.id ? String(user.id) : ""}
+              presenceByUser={presenceByUser}
+            />
+          ) : activeServer ? (
+            <ChannelSidebar
+              key={activeServer.id}
+              server={activeServer}
+              channels={channels}
+              activeChannelId={activeChannelId}
+              onSelectChannel={(id) => {
+                stopTypingNow();
+                setActiveConversationId(null);
+                setActiveChannelId(id);
+              }}
+              onCreateChannel={handleCreateChannel}
+            />
+          ) : (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <p className="text-ui text-muted-foreground text-center">Loading...</p>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
-
-      {mobilePanel && (
-        <div className="md:hidden fixed inset-0 z-40 bg-black/70" onClick={() => setMobilePanel(null)}>
-          <div
-            className={`absolute top-0 h-full bg-card border-r border-border transition-transform duration-200 ${mobilePanel === "servers" ? "left-0 w-[72px]" : "left-0 w-[280px] max-w-[85vw]"}`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            {mobilePanel === "servers" ? (
-              <div className="flex h-full flex-col">
-                <ServerBar
-                  servers={servers}
-                  activeServerId={activeServerId}
-                  activeSection={activeSection}
-                  onSelectServer={(id) => {
-                    setActiveServerId(id);
-                    setMobilePanel(null);
-                  }}
-                  onGlobalSection={() => {
-                    setActiveSection("global");
-                    setMobilePanel(null);
-                  }}
-                  onPersonalSection={() => {
-                    setActiveSection("personal");
-                    setActiveServerId(null);
-                    setMobilePanel(null);
-                  }}
-                  onCreateServer={handleCreateServer}
-                  onFeed={() => {
-                    setMobilePanel(null);
-                    router.push("/feed");
-                  }}
-                  onConnections={() => {
-                    setMobilePanel(null);
-                    router.push("/connections");
-                  }}
-                  onSettings={() => {
-                    setMobilePanel(null);
-                    router.push("/settings");
-                  }}
-                  onLogout={() => {
-                    setMobilePanel(null);
-                    logout();
-                    router.replace("/");
-                  }}
-                  onSearch={() => toast.info("Global search coming soon!")}
-                  onProfile={() => {
-                    setMobilePanel(null);
-                    router.push("/profile/me");
-                  }}
-                  userProfile={{
-                    username: profile.username,
-                    avatarUrl: profile.avatarUrl
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="h-full bg-sidebar border-r border-sidebar-border">
-                {roomSidebarContent}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* 3. Main Chat Panel */}
       <div className="flex-1 flex flex-col min-w-0 bg-background relative">
@@ -1825,27 +1751,19 @@ export function ChatAppShell() {
           <div className="flex flex-col h-full">
             {/* Header */}
             {/* Header / Room Title */}
-            <div className="h-12 sm:h-14 flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 border-b border-border shrink-0 bg-background/50 backdrop-blur-md sticky top-0 z-10">
-               <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                 <div className="flex items-center gap-1 md:hidden">
-                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobilePanel("servers")}>
-                     <Menu className="h-4 w-4" />
-                   </Button>
-                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobilePanel("rooms")}>
-                     <Search className="h-4 w-4" />
-                   </Button>
-                 </div>
+            <div className="h-14 flex items-center justify-between gap-3 px-6 border-b border-border shrink-0 bg-background/50 backdrop-blur-md sticky top-0 z-10">
+               <div className="flex items-center gap-3">
                  <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center border border-border">
                    {activeChannelId ? <Globe2 className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-accent" />}
                  </div>
-                 <div className="min-w-0 flex flex-col">
-                   <h2 className="text-sm font-bold tracking-tight truncate max-w-[42vw] sm:max-w-none">
+                 <div className="flex flex-col">
+                   <h2 className="text-sm font-bold tracking-tight">
                      {activeChannelId 
                        ? normalizeChannelName(activeChannel?.name || "channel") 
                        : conversationTitles[activeConversationId!] || "Direct Message"}
                    </h2>
                    {activeChannelId && (
-                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold truncate">
+                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                        Text Channel
                      </p>
                    )}
@@ -1867,7 +1785,7 @@ export function ChatAppShell() {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto scrollbar-thin px-3 sm:px-4 py-4 space-y-1">
+            <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-4 space-y-1">
               {isLoadingMessages ? (
                 <div className="flex items-center justify-center h-full text-ui text-muted-foreground">
                   <span className="animate-pulse">Loading messages...</span>
@@ -1908,7 +1826,7 @@ export function ChatAppShell() {
             {/* Composer Section */}
             <div className="relative">
               {typingNotice && (
-                <div className="absolute -top-6 left-3 sm:left-6 flex items-center gap-2">
+                <div className="absolute -top-6 left-6 flex items-center gap-2">
                   <div className="flex gap-0.5">
                     <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
                     <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
@@ -1948,10 +1866,6 @@ export function ChatAppShell() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
              <div className="text-center space-y-4 max-w-sm px-6">
-               <div className="md:hidden flex items-center justify-center gap-2">
-                <Button variant="outline" className="h-9" onClick={() => setMobilePanel("servers")}>Servers</Button>
-                <Button variant="outline" className="h-9" onClick={() => setMobilePanel("rooms")}>Chats</Button>
-               </div>
                 <div className="w-16 h-16 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-6">
                    <Globe2 className="h-8 w-8 text-primary" />
                 </div>
