@@ -30,9 +30,9 @@ export function AuthShell({
   maxWidthClassName = "max-w-sm"
 }: AuthShellProps) {
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background p-4 font-sans">
+    <div className="flex min-h-svh items-center justify-center bg-background p-2 md:p-4 font-sans">
       <div
-        className={`w-full ${maxWidthClassName} space-y-6 animate-float-up bg-[#0A0A0B]/80 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]`}
+        className={`w-full ${maxWidthClassName} space-y-4 md:space-y-6 animate-float-up bg-[#0A0A0B]/80 backdrop-blur-xl border border-white/10 p-3 md:p-5 sm:p-8 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]`}
       >
         <div className="text-center space-y-2">
           <Link 

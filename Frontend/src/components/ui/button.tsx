@@ -20,16 +20,16 @@ const buttonVariants = cva(
         // Restore legacy variants if needed by Hero
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        xl: "h-12 rounded-md px-10 text-base",
-        icon: "h-10 w-10",
+        default: "h-11 min-h-[44px] px-4 py-2",
+        sm: "h-10 min-h-[44px] rounded-md px-3",
+        lg: "h-12 min-h-[44px] rounded-md px-8",
+        xl: "h-14 min-h-[44px] rounded-md px-10 text-base",
+        icon: "h-11 w-11 min-h-[44px] min-w-[44px]",
         // Restore legacy sizes for Hero compatibility
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs",
-        "icon-xs": "size-6 rounded-[min(var(--radius-md),10px)] [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-7 rounded-[min(var(--radius-md),12px)]",
-        "icon-lg": "size-9",
+        xs: "h-8 min-h-[36px] gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs",
+        "icon-xs": "size-8 min-h-[36px] min-w-[36px] rounded-[min(var(--radius-md),10px)] [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "size-9 min-h-[40px] min-w-[40px] rounded-[min(var(--radius-md),12px)]",
+        "icon-lg": "size-12 min-h-[48px] min-w-[48px]",
       },
     },
     defaultVariants: {

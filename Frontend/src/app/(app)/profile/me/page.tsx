@@ -144,10 +144,10 @@ export default function MyProfilePage() {
             <div className="h-32 bg-linear-to-r from-indigo-500/30 via-cyan-500/20 to-indigo-500/30 sm:h-48" />
 
             {/* Profile Content */}
-            <div className="px-6 pb-8 sm:px-10">
-              <div className="relative mb-6 flex items-end justify-between">
+            <div className="px-4 pb-8 sm:px-10">
+              <div className="relative mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 {/* Avatar */}
-                <div className="-mt-16 flex size-32 items-center justify-center overflow-hidden rounded-3xl border-4 border-[#0A0A0B] bg-indigo-500/30 text-5xl font-bold text-white shadow-xl backdrop-blur-md">
+                <div className="-mt-12 sm:-mt-16 flex size-24 sm:size-32 items-center justify-center overflow-hidden rounded-3xl border-4 border-[#0A0A0B] bg-indigo-500/30 text-4xl sm:text-5xl font-bold text-white shadow-xl backdrop-blur-md">
                    {formData.avatarUrl ? (
                      <img src={formData.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                    ) : (
@@ -159,7 +159,7 @@ export default function MyProfilePage() {
                 {!isEditing && (
                   <Button 
                     onClick={() => setIsEditing(true)}
-                    className="rounded-full bg-white/10 text-white hover:bg-white/20"
+                    className="rounded-full bg-white/10 text-white hover:bg-white/20 w-full sm:w-auto"
                   >
                     <Edit2 className="mr-2 size-4" />
                     Edit Profile
@@ -273,11 +273,11 @@ export default function MyProfilePage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-6 border-t border-white/10">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-6 border-t border-white/10">
                     <Button
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full px-6"
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full px-6 w-full sm:w-auto"
                     >
                       {isSaving ? <Loader2 className="size-4 animate-spin mr-2" /> : <Save className="size-4 mr-2" />}
                       Save Profile
@@ -286,7 +286,7 @@ export default function MyProfilePage() {
                       variant="ghost"
                       onClick={handleCancel}
                       disabled={isSaving}
-                      className="text-zinc-400 hover:text-white rounded-full px-6"
+                      className="text-zinc-400 hover:text-white rounded-full px-6 w-full sm:w-auto"
                     >
                       Cancel
                     </Button>
@@ -296,8 +296,8 @@ export default function MyProfilePage() {
                 /* View Mode */
                 <div className="space-y-8 animate-in fade-in">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <h1 className="text-3xl font-bold text-white leading-tight">{profile?.username}</h1>
+                    <div className="min-w-0">
+                      <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight truncate">{profile?.username}</h1>
                       {profile?.headline && (
                         <p className="mt-1 flex items-center gap-2 text-lg text-indigo-300">
                           <Briefcase className="size-4 shrink-0" />
@@ -306,7 +306,7 @@ export default function MyProfilePage() {
                       )}
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {profile?.socialLinks?.linkedin && (
                         <a href={profile.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-[#0077b5] transition-all">
                           <Linkedin className="size-5" />

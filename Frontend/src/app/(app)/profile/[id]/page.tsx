@@ -145,10 +145,10 @@ export default function UserProfilePage() {
             <div className="h-32 bg-linear-to-r from-indigo-500/30 via-cyan-500/20 to-indigo-500/30 sm:h-48" />
 
             {/* Profile Content */}
-            <div className="px-6 pb-8 sm:px-10">
-              <div className="relative mb-6 flex items-end justify-between">
+            <div className="px-4 pb-8 sm:px-10">
+              <div className="relative mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 {/* Avatar */}
-                <div className="-mt-16 flex size-32 items-center justify-center overflow-hidden rounded-3xl border-4 border-[#0A0A0B] bg-indigo-500/30 text-5xl font-bold text-white shadow-xl backdrop-blur-md">
+                <div className="-mt-12 sm:-mt-16 flex size-24 sm:size-32 items-center justify-center overflow-hidden rounded-3xl border-4 border-[#0A0A0B] bg-indigo-500/30 text-4xl sm:text-5xl font-bold text-white shadow-xl backdrop-blur-md">
                    {profile?.avatarUrl ? (
                      <img src={profile.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                    ) : (
@@ -157,12 +157,12 @@ export default function UserProfilePage() {
                 </div>
                 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex w-full flex-col sm:w-auto sm:flex-row gap-2">
                   {connectionStatus === 'NONE' && (
                     <Button 
                       onClick={handleConnect}
                       disabled={isConnecting}
-                      className="rounded-full bg-indigo-600 text-white hover:bg-indigo-500"
+                      className="rounded-full bg-indigo-600 text-white hover:bg-indigo-500 w-full sm:w-auto"
                     >
                       {isConnecting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <UserPlus className="mr-2 size-4" />}
                       Connect
@@ -177,7 +177,7 @@ export default function UserProfilePage() {
                     <Button 
                       onClick={handleAccept}
                       disabled={isConnecting}
-                      className="rounded-full bg-white text-black hover:bg-zinc-200"
+                      className="rounded-full bg-white text-black hover:bg-zinc-200 w-full sm:w-auto"
                     >
                       {isConnecting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Check className="mr-2 size-4" />}
                       Accept Request
@@ -188,7 +188,7 @@ export default function UserProfilePage() {
                       onClick={handleRemove}
                       disabled={isConnecting}
                       variant="outline" 
-                      className="rounded-full border-green-500/30 bg-green-500/10 text-green-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors"
+                      className="rounded-full border-green-500/30 bg-green-500/10 text-green-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors w-full sm:w-auto"
                     >
                       {isConnecting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Check className="mr-2 size-4" />}
                       Connected (Remove)
@@ -200,8 +200,8 @@ export default function UserProfilePage() {
               {/* View Mode */}
               <div className="space-y-8 animate-in fade-in">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h1 className="text-3xl font-bold text-white leading-tight">{profile?.username}</h1>
+                  <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight truncate">{profile?.username}</h1>
                     {profile?.headline && (
                       <p className="mt-1 flex items-center gap-2 text-lg text-indigo-300">
                         <Briefcase className="size-4 shrink-0" />
@@ -210,7 +210,7 @@ export default function UserProfilePage() {
                     )}
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {profile?.socialLinks?.linkedin && (
                       <a href={profile.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-[#0077b5] transition-all">
                         <Linkedin className="size-5" />

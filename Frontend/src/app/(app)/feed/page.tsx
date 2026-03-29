@@ -570,10 +570,10 @@ export default function FeedPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[120px] rounded-full" />
       </div>
 
-      <div className="max-w-[1400px] mx-auto p-6 md:p-10 space-y-8 w-full relative z-10">
+        <div className="max-w-[1400px] mx-auto p-4 sm:p-6 md:p-10 space-y-4 sm:space-y-6 w-full relative z-10">
         
-          <header className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-5">
+          <header className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div className="flex items-center gap-4 sm:gap-5">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -583,13 +583,13 @@ export default function FeedPage() {
             >
               <ArrowLeft className="h-6 w-6" />
             </Button>
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight drop-shadow-electric-glow tracking-wider text-white">Community</h1>
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight drop-shadow-electric-glow tracking-wider text-white">Community</h1>
               <p className="text-zinc-400 mt-2 font-medium">Your Daily Connections</p>
             </div>
           </div>
           <Button 
-            className="h-12 px-6 rounded-xl border border-indigo-300/35 bg-linear-to-r from-indigo-500 via-indigo-600 to-blue-500 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 hover:from-indigo-400 hover:via-indigo-500 hover:to-blue-400 hover:shadow-[0_0_16px_rgba(99,102,241,0.5)]"
+            className="h-12 px-6 rounded-xl border border-indigo-300/35 bg-linear-to-r from-indigo-500 via-indigo-600 to-blue-500 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 hover:from-indigo-400 hover:via-indigo-500 hover:to-blue-400 hover:shadow-[0_0_16px_rgba(99,102,241,0.5)] w-full sm:w-auto"
             onClick={() => setComposing(!composing)}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -604,7 +604,7 @@ export default function FeedPage() {
               initial={{ opacity: 0, height: 0, scale: 0.95 }}
               animate={{ opacity: 1, height: 'auto', scale: 1 }}
               exit={{ opacity: 0, height: 0, scale: 0.95 }}
-              className="bg-black/50 border border-white/10 rounded-2xl backdrop-blur-xl p-6 mb-8 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)] overflow-hidden"
+              className="bg-black/50 border border-white/10 rounded-2xl backdrop-blur-xl p-4 sm:p-6 mb-8 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)] overflow-hidden"
             >
               <div className="space-y-4">
                 <Input 
@@ -628,19 +628,19 @@ export default function FeedPage() {
                       <button onClick={() => setAttachment(null)} className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1"><X className="w-3 h-3" /></button>
                     </div>
                   )}
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <input type="file" id="post-file" className="hidden" accept="image/*,video/*" onChange={(e) => e.target.files && setAttachment(e.target.files[0])} />
                       <label htmlFor="post-file" className="cursor-pointer text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm font-medium">
                         <Paperclip className="w-4 h-4" /> Media
                       </label>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Button variant="ghost" className="font-semibold text-muted-foreground" onClick={() => { setComposing(false); setAttachment(null); }}>
+                    <div className="flex w-full sm:w-auto items-center gap-3">
+                      <Button variant="ghost" className="font-semibold text-muted-foreground flex-1 sm:flex-none" onClick={() => { setComposing(false); setAttachment(null); }}>
                         Discard
                       </Button>
                       <Button
-                        className="px-8 font-bold"
+                        className="px-8 font-bold flex-1 sm:flex-none"
                         onClick={handlePost}
                         disabled={posting || (!content.trim() && !attachment)}
                       >
@@ -670,7 +670,7 @@ export default function FeedPage() {
             </Button>
           </div>
         ) : posts.length === 0 ? (
-          <div className="bg-black/20 border border-white/10 rounded-3xl p-16 text-center space-y-4 backdrop-blur-xl">
+          <div className="bg-black/20 border border-white/10 rounded-3xl p-8 sm:p-16 text-center space-y-4 backdrop-blur-xl">
             <div className="w-20 h-20 bg-surface rounded-full flex items-center justify-center mx-auto mb-2 border border-border/50">
               <Share2 className="h-8 w-8 text-muted-foreground/30" />
             </div>
