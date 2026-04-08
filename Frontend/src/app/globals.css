@@ -216,4 +216,13 @@
     background-color: hsl(var(--muted));
     border-radius: 3px;
   }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }

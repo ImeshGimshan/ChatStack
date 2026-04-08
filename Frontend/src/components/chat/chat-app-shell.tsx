@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Globe2, Lock, Plus, Shield, Unlock, Check, Pencil, Send, Smile, Trash2, X, Search } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Globe2, Lock, Plus, Shield, Unlock, Check, Pencil, Send, Smile, Trash2, X, Search, Menu, ArrowLeft } from "lucide-react";
 import { SecondarySidebar } from "@/components/chat/secondary-sidebar";
 import { ServerSidebar } from "@/components/chat/server-sidebar";
 import ServerBar from "./lovable/ServerBar";
@@ -94,6 +94,7 @@ export function ChatAppShell() {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [pendingDeleteMessageId, setPendingDeleteMessageId] = useState<string | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
@@ -1664,10 +1665,126 @@ export function ChatAppShell() {
     return palette[colorIndex];
   }
 
+  // Close mobile sidebar when a channel or conversation is selected
+  const handleMobileSelectChannel = useCallback((id: string) => {
+    stopTypingNow();
+    setActiveConversationId(null);
+    setActiveChannelId(id);
+    setMobileSidebarOpen(false);
+  }, []);
+
+  const handleMobileSelectConversation = useCallback((id: string) => {
+    stopTypingNow();
+    setActiveChannelId(null);
+    setActiveConversationId(id);
+    setMobileSidebarOpen(false);
+  }, []);
+
   return (
     <main className="h-svh flex overflow-hidden bg-background text-foreground">
-      {/* 1. Server List Rail */}
-      <div className="flex flex-col w-[72px] min-w-[72px] bg-card border-r border-border h-full">
+
+      {/* ===== MOBILE SIDEBAR OVERLAY (< md) ===== */}
+      {/* Backdrop */}
+      <AnimatePresence>
+        {mobileSidebarOpen && (
+          <motion.div
+            key="mobile-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/60 z-40 md:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sliding sidebar panel (mobile only) */}
+      <div
+        className={`
+          fixed inset-y-0 left-0 z-50 flex
+          transition-transform duration-300 ease-in-out
+          md:hidden
+          ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        {/* Server Rail */}
+        <div className="flex flex-col w-[72px] min-w-[72px] bg-card border-r border-border h-full">
+          <ServerBar
+            servers={servers}
+            activeServerId={activeServerId}
+            activeSection={activeSection}
+            onSelectServer={(id) => { setActiveServerId(id); }}
+            onGlobalSection={() => setActiveSection("global")}
+            onPersonalSection={() => {
+              setActiveSection("personal");
+              setActiveServerId(null);
+            }}
+            onCreateServer={handleCreateServer}
+            onFeed={() => router.push("/feed")}
+            onConnections={() => router.push("/connections")}
+            onSettings={() => router.push("/settings")}
+            onLogout={() => {
+              logout();
+              router.replace("/");
+            }}
+            onSearch={() => toast.info("Global search coming soon!")}
+            onProfile={() => router.push("/profile/me")}
+            userProfile={{
+              username: profile.username,
+              avatarUrl: profile.avatarUrl
+            }}
+          />
+        </div>
+
+        {/* Channel / Conversation sidebar */}
+        <div className="flex flex-col w-60 min-w-[240px] bg-sidebar border-r border-sidebar-border h-full">
+          <AnimatePresence mode="wait">
+            {activeSection === "global" ? (
+              <motion.div
+                key="global-info"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex-1 p-4"
+              >
+                <h2 className="text-sm font-semibold mb-4">Discover</h2>
+                <p className="text-ui text-muted-foreground">Explore the global feed and connect with others.</p>
+              </motion.div>
+            ) : !activeServerId ? (
+              <ConversationSidebar
+                key="dms"
+                conversations={conversations.map(c => ({
+                  ...c,
+                  name: conversationTitles[c.id] || c.name
+                }))}
+                activeId={activeConversationId}
+                onSelect={handleMobileSelectConversation}
+                userId={user?.id ? String(user.id) : ""}
+                presenceByUser={presenceByUser}
+              />
+            ) : activeServer ? (
+              <ChannelSidebar
+                key={activeServer.id}
+                server={activeServer}
+                channels={channels}
+                activeChannelId={activeChannelId}
+                onSelectChannel={handleMobileSelectChannel}
+                onCreateChannel={handleCreateChannel}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center p-4">
+                <p className="text-ui text-muted-foreground text-center">Loading...</p>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+
+      {/* ===== DESKTOP SIDEBARS (≥ md) — always visible ===== */}
+
+      {/* 1. Server List Rail (desktop) */}
+      <div className="hidden md:flex flex-col w-[72px] min-w-[72px] bg-card border-r border-border h-full">
         <ServerBar
           servers={servers}
           activeServerId={activeServerId}
@@ -1695,8 +1812,8 @@ export function ChatAppShell() {
         />
       </div>
 
-      {/* 2. Channel/Conversation Sidebar */}
-      <div className="flex flex-col w-60 min-w-[240px] bg-sidebar border-r border-sidebar-border">
+      {/* 2. Channel/Conversation Sidebar (desktop) */}
+      <div className="hidden md:flex flex-col w-60 min-w-[240px] bg-sidebar border-r border-sidebar-border">
         <AnimatePresence mode="wait">
           {activeSection === "global" ? (
             <motion.div
@@ -1749,10 +1866,17 @@ export function ChatAppShell() {
       <div className="flex-1 flex flex-col min-w-0 bg-background relative">
         {activeRoom ? (
           <div className="flex flex-col h-full">
-            {/* Header */}
             {/* Header / Room Title */}
-            <div className="h-14 flex items-center justify-between gap-3 px-6 border-b border-border shrink-0 bg-background/50 backdrop-blur-md sticky top-0 z-10">
-               <div className="flex items-center gap-3">
+            <div className="h-14 flex items-center justify-between gap-3 px-4 md:px-6 border-b border-border shrink-0 bg-background/50 backdrop-blur-md sticky top-0 z-10">
+               <div className="flex items-center gap-2 md:gap-3">
+                 {/* Mobile hamburger / back button */}
+                 <button
+                   className="md:hidden p-1.5 -ml-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
+                   onClick={() => setMobileSidebarOpen(true)}
+                 >
+                   <Menu className="h-5 w-5" />
+                 </button>
+
                  <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center border border-border">
                    {activeChannelId ? <Globe2 className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-accent" />}
                  </div>
@@ -1785,7 +1909,7 @@ export function ChatAppShell() {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-4 space-y-1">
+            <div className="flex-1 overflow-y-auto scrollbar-thin px-3 md:px-4 py-4 space-y-1">
               {isLoadingMessages ? (
                 <div className="flex items-center justify-center h-full text-ui text-muted-foreground">
                   <span className="animate-pulse">Loading messages...</span>
@@ -1826,7 +1950,7 @@ export function ChatAppShell() {
             {/* Composer Section */}
             <div className="relative">
               {typingNotice && (
-                <div className="absolute -top-6 left-6 flex items-center gap-2">
+                <div className="absolute -top-6 left-4 md:left-6 flex items-center gap-2">
                   <div className="flex gap-0.5">
                     <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
                     <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
@@ -1866,6 +1990,14 @@ export function ChatAppShell() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
              <div className="text-center space-y-4 max-w-sm px-6">
+                {/* Mobile: show hamburger on welcome screen too */}
+                <button
+                  className="md:hidden absolute top-4 left-4 p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
+                  onClick={() => setMobileSidebarOpen(true)}
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+
                 <div className="w-16 h-16 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-6">
                    <Globe2 className="h-8 w-8 text-primary" />
                 </div>
